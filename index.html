@@ -1,94 +1,440 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumera AI</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  <!-- صفحه ورود -->
-  <div id="login-screen" class="screen active">
-    <div class="login-card">
-      <div class="logo">
-        <div class="logo-icon">✦</div>
-        <h1>Lumera AI</h1>
-        <p class="tagline">هوش مصنوعی همراه شما</p>
-      </div>
+const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_DALm5phLFNf8pf7q7Pl3Mg_KZPnwKAJ';
 
-      <!-- فرم اصلی ایمیل -->
-      <form id="login-form">
-        <div class="input-group">
-          <label for="email">ایمیل خود را وارد کنید</label>
-          <input type="email" id="email" placeholder="ali.reza@gmail.com" required autocomplete="email" />
-          <span class="error-msg" id="email-error"></span>
-        </div>
-        <button type="submit" id="login-btn">
-          <span>ورود به Lumera</span>
-        </button>
-      </form>
+// ==============================
+// 🎯 تنظیمات مالک
+// ==============================
+const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
+const OWNER_PASSWORD = 'LumeraAdmin2026!';  // ⚠️ این رو عوض کن اگه خواستی
 
-      <!-- فرم کد OTP (برای کاربران عادی) -->
-      <form id="otp-form" style="display:none;">
-        <div class="input-group">
-          <label for="otp">کد ۶ رقمی ارسال شده به ایمیلت را وارد کن</label>
-          <input type="text" id="otp" placeholder="123456" maxlength="6" inputmode="numeric" style="text-align:center; letter-spacing:8px; font-size:20px;" />
-          <span class="error-msg" id="otp-error"></span>
-        </div>
-        <button type="submit" id="verify-btn">
-          <span>تأیید و ورود</span>
-        </button>
-        <button type="button" id="back-btn" style="background:transparent; border:1px solid var(--border); color:var(--text-dim); margin-top:10px;">بازگشت</button>
-      </form>
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      <!-- فرم پسورد مالک (فقط برای ایمیل مالک) -->
-      <form id="owner-form" style="display:none;">
-        <div class="input-group">
-          <label for="owner-pass">رمز مالک را وارد کن</label>
-          <input type="password" id="owner-pass" placeholder="••••••••" />
-          <span class="error-msg" id="owner-error"></span>
-        </div>
-        <button type="submit" id="owner-btn">
-          <span>ورود مالک</span>
-        </button>
-        <button type="button" id="owner-back-btn" style="background:transparent; border:1px solid var(--border); color:var(--text-dim); margin-top:10px;">بازگشت</button>
-      </form>
+let currentUser = null;
+let currentProfile = null;
+let currentConversationId = null;
+let isSending = false;
+let pendingEmail = '';
+let isOwner = false;
 
-      <p class="hint">با ورود، شما قوانین استفاده را می‌پذیرید</p>
-    </div>
-  </div>
+const loginScreen = document.getElementById('login-screen');
+const chatScreen = document.getElementById('chat-screen');
+const loginForm = document.getElementById('login-form');
+const otpForm = document.getElementById('otp-form');
+const ownerForm = document.getElementById('owner-form');
+const emailInput = document.getElementById('email');
+const emailError = document.getElementById('email-error');
+const loginBtn = document.getElementById('login-btn');
+const otpInput = document.getElementById('otp');
+const otpError = document.getElementById('otp-error');
+const verifyBtn = document.getElementById('verify-btn');
+const backBtn = document.getElementById('back-btn');
+const ownerPassInput = document.getElementById('owner-pass');
+const ownerError = document.getElementById('owner-error');
+const ownerBtn = document.getElementById('owner-btn');
+const ownerBackBtn = document.getElementById('owner-back-btn');
+const messagesEl = document.getElementById('messages');
+const chatForm = document.getElementById('chat-form');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const userGreeting = document.getElementById('user-greeting');
 
-  <!-- صفحه چت -->
-  <div id="chat-screen" class="screen">
-    <header class="chat-header">
-      <div class="header-left">
-        <div class="logo-icon small">✦</div>
-        <div>
-          <h2>Lumera AI</h2>
-          <span class="status" id="user-greeting">سلام!</span>
-        </div>
-      </div>
-      <button id="logout-btn" title="خروج">↩</button>
-    </header>
+// ==============================
+// Helpers
+// ==============================
+function isValidEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email.trim());
+}
 
-    <main id="messages" class="messages"></main>
+function extractNameFromEmail(email) {
+  const local = email.split('@')[0];
+  const cleaned = local
+    .replace(/[._-]+/g, ' ')
+    .replace(/[0-9]+/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+  return cleaned || 'دوست عزیز';
+}
 
-    <footer class="chat-input-area">
-      <form id="chat-form">
-        <textarea id="user-input" placeholder="پیام خود را بنویسید..." rows="1" required></textarea>
-        <button type="submit" id="send-btn" title="ارسال">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-          </svg>
-        </button>
-      </form>
-    </footer>
-  </div>
+// ==============================
+// 🔑 فرم اصلی ورود
+// ==============================
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  emailError.textContent = '';
 
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+  const email = emailInput.value.trim().toLowerCase();
+
+  if (!isValidEmail(email)) {
+    emailError.textContent = 'لطفاً یک ایمیل معتبر وارد کنید';
+    return;
+  }
+
+  // 🎯 اگه ایمیل مالک بود → فرم پسورد
+  if (email === OWNER_EMAIL.toLowerCase()) {
+    pendingEmail = email;
+    loginForm.style.display = 'none';
+    ownerForm.style.display = 'block';
+    ownerPassInput.focus();
+    ownerError.textContent = '';
+    return;
+  }
+
+  // کاربر عادی → ارسال کد OTP
+  loginBtn.disabled = true;
+  loginBtn.querySelector('span').textContent = 'در حال ارسال...';
+
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+
+    if (error) throw error;
+
+    pendingEmail = email;
+    loginForm.style.display = 'none';
+    otpForm.style.display = 'block';
+    otpInput.focus();
+    otpError.style.color = '#4ade80';
+    otpError.textContent = `کد به ${email} ارسال شد. ایمیلت رو چک کن (Spam هم).`;
+  } catch (err) {
+    console.error(err);
+    emailError.style.color = '#f87171';
+    emailError.textContent = err.message || 'خطا در ارسال کد.';
+    loginBtn.disabled = false;
+    loginBtn.querySelector('span').textContent = 'ورود به Lumera';
+  }
+});
+
+// ==============================
+// 🔑 فرم پسورد مالک
+// ==============================
+ownerForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  ownerError.textContent = '';
+
+  const pass = ownerPassInput.value;
+
+  if (pass !== OWNER_PASSWORD) {
+    ownerError.style.color = '#f87171';
+    ownerError.textContent = 'رمز اشتباهه';
+    return;
+  }
+
+  ownerBtn.disabled = true;
+  ownerBtn.querySelector('span').textContent = 'در حال ورود...';
+
+  try {
+    // ورود مالک با پسورد
+    let { error } = await supabase.auth.signInWithPassword({
+      email: OWNER_EMAIL,
+      password: OWNER_PASSWORD,
+    });
+
+    // اگه کاربر مالک وجود نداشت، بسازش
+    if (error && error.message.includes('Invalid login credentials')) {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: OWNER_EMAIL,
+        password: OWNER_PASSWORD,
+      });
+
+      if (signUpError) throw signUpError;
+
+      // دوباره ورود
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: OWNER_EMAIL,
+        password: OWNER_PASSWORD,
+      });
+
+      if (loginError) throw loginError;
+    } else if (error) {
+      throw error;
+    }
+
+    isOwner = true;
+  } catch (err) {
+    console.error(err);
+    ownerError.style.color = '#f87171';
+    ownerError.textContent = err.message || 'خطا در ورود مالک';
+    ownerBtn.disabled = false;
+    ownerBtn.querySelector('span').textContent = 'ورود مالک';
+  }
+});
+
+ownerBackBtn.addEventListener('click', () => {
+  ownerForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  ownerPassInput.value = '';
+  ownerError.textContent = '';
+  ownerBtn.disabled = false;
+  ownerBtn.querySelector('span').textContent = 'ورود مالک';
+});
+
+// ==============================
+// 🔑 فرم OTP
+// ==============================
+otpForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  otpError.textContent = '';
+
+  const token = otpInput.value.trim();
+
+  if (token.length !== 6) {
+    otpError.style.color = '#f87171';
+    otpError.textContent = 'کد باید ۶ رقمی باشد';
+    return;
+  }
+
+  verifyBtn.disabled = true;
+  verifyBtn.querySelector('span').textContent = 'در حال تأیید...';
+
+  try {
+    const { error } = await supabase.auth.verifyOtp({
+      email: pendingEmail,
+      token: token,
+      type: 'email',
+    });
+
+    if (error) throw error;
+  } catch (err) {
+    console.error(err);
+    otpError.style.color = '#f87171';
+    otpError.textContent = 'کد اشتباه یا منقضی شده.';
+    verifyBtn.disabled = false;
+    verifyBtn.querySelector('span').textContent = 'تأیید و ورود';
+  }
+});
+
+backBtn.addEventListener('click', () => {
+  otpForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  loginBtn.disabled = false;
+  loginBtn.querySelector('span').textContent = 'ورود به Lumera';
+  otpInput.value = '';
+  otpError.textContent = '';
+});
+
+// ==============================
+// Auth State
+// ==============================
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    currentUser = session.user;
+    isOwner = currentUser.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    await loadProfile();
+    showChatScreen();
+  } else {
+    currentUser = null;
+    currentProfile = null;
+    isOwner = false;
+    showLoginScreen();
+  }
+});
+
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    isOwner = currentUser.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    await loadProfile();
+    showChatScreen();
+  }
+})();
+
+// ==============================
+// Profile
+// ==============================
+async function loadProfile() {
+  if (!currentUser) return;
+
+  let { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  if (error || !data) {
+    const displayName = isOwner ? 'مالک' : extractNameFromEmail(currentUser.email);
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: currentUser.id,
+        email: currentUser.email,
+        display_name: displayName,
+      })
+      .select()
+      .maybeSingle();
+
+    if (insertError) {
+      console.error('Profile insert error:', insertError);
+      currentProfile = { display_name: displayName, email: currentUser.email };
+    } else {
+      currentProfile = newProfile || { display_name: displayName, email: currentUser.email };
+    }
+  } else {
+    currentProfile = data;
+  }
+
+  const prefix = isOwner ? '👑 ' : '';
+  userGreeting.textContent = `${prefix}سلام ${currentProfile.display_name} 👋`;
+}
+
+// ==============================
+// Screens
+// ==============================
+function showLoginScreen() {
+  loginScreen.classList.add('active');
+  chatScreen.classList.remove('active');
+  otpForm.style.display = 'none';
+  ownerForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  emailInput.value = '';
+  otpInput.value = '';
+  ownerPassInput.value = '';
+  loginBtn.disabled = false;
+  loginBtn.querySelector('span').textContent = 'ورود به Lumera';
+  verifyBtn.disabled = false;
+  verifyBtn.querySelector('span').textContent = 'تأیید و ورود';
+}
+
+function showChatScreen() {
+  loginScreen.classList.remove('active');
+  chatScreen.classList.add('active');
+
+  messagesEl.innerHTML = '';
+  const name = currentProfile?.display_name || 'دوست عزیز';
+  const greeting = isOwner
+    ? `👑 سلام مالک عزیز ${name}! به Lumera خوش آمدی.`
+    : `سلام ${name}! من Lumera هستم. چطور می‌تونم کمکت کنم؟ 🌟`;
+  showSystemMessage(greeting);
+
+  ensureConversation();
+  userInput.focus();
+}
+
+// ==============================
+// Conversation
+// ==============================
+async function ensureConversation() {
+  if (currentConversationId) return currentConversationId;
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert({ user_id: currentUser.id, title: 'گفتگوی جدید' })
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('Conversation error:', error);
+    return null;
+  }
+
+  currentConversationId = data.id;
+  return currentConversationId;
+}
+
+// ==============================
+// Messages UI
+// ==============================
+function addMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.textContent = content;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return div;
+}
+
+function showSystemMessage(text) { addMessage('system', text); }
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return div;
+}
+
+function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
+
+// ==============================
+// Send Message
+// ==============================
+chatForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (isSending) return;
+
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  isSending = true;
+  sendBtn.disabled = true;
+  userInput.value = '';
+  userInput.style.height = 'auto';
+
+  addMessage('user', text);
+
+  const convId = await ensureConversation();
+  if (convId) {
+    await supabase.from('messages').insert({
+      conversation_id: convId, role: 'user', content: text,
+    });
+  }
+
+  showTyping();
+
+  try {
+    const { data, error } = await supabase.functions.invoke('chat', {
+      body: {
+        message: text,
+        conversationId: convId,
+        userName: currentProfile?.display_name || 'کاربر',
+        isOwner: isOwner,
+      },
+    });
+
+    removeTyping();
+    if (error) throw error;
+
+    const reply = data?.reply || 'متأسفم، پاسخی دریافت نشد.';
+    addMessage('assistant', reply);
+
+    if (convId) {
+      await supabase.from('messages').insert({
+        conversation_id: convId, role: 'assistant', content: reply,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    removeTyping();
+    addMessage('assistant', '⚠️ خطا در ارتباط با سرور. لطفاً دوباره تلاش کن.');
+  } finally {
+    isSending = false;
+    sendBtn.disabled = false;
+    userInput.focus();
+  }
+});
+
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 150) + 'px';
+});
+
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    chatForm.requestSubmit();
+  }
+});
+
+logoutBtn.addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  currentConversationId = null;
+  isOwner = false;
+});
