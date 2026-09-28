@@ -3,7 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DALm5phLFNf8pf7q7Pl3Mg_KZPnwKAJ';
 
-// 🎯 ایمیل مالک
 const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -44,9 +43,6 @@ function extractNameFromEmail(email) {
   return cleaned || 'دوست عزیز';
 }
 
-// ==============================
-// ورود
-// ==============================
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   emailError.textContent = '';
@@ -58,27 +54,22 @@ loginForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  // 🎯 اگه ایمیل مالک بود → مستقیم وارد شو (بدون Auth)
   if (email === OWNER_EMAIL.toLowerCase()) {
     isOwner = true;
     currentUser = { id: 'owner-local', email: OWNER_EMAIL };
     currentProfile = { display_name: 'مالک', email: OWNER_EMAIL };
-    
-    // ذخیره تو localStorage که بعد از رفرش یادش بمونه
     localStorage.setItem('lumera_owner', 'true');
-    
     showChatScreen();
     return;
   }
 
-  // کاربر عادی → ارسال OTP
   loginBtn.disabled = true;
   loginBtn.querySelector('span').textContent = 'در حال ارسال...';
 
   try {
     const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
+      email: email,
+      options: { shouldCreateUser: true }
     });
 
     if (error) throw error;
@@ -88,7 +79,7 @@ loginForm.addEventListener('submit', async (e) => {
     otpForm.style.display = 'block';
     otpInput.focus();
     otpError.style.color = '#4ade80';
-    otpError.textContent = `کد به ${email} ارسال شد. ایمیلت رو چک کن.`;
+    otpError.textContent = 'کد به ' + email + ' ارسال شد. ایمیلت رو چک کن.';
   } catch (err) {
     console.error(err);
     emailError.style.color = '#f87171';
@@ -98,9 +89,6 @@ loginForm.addEventListener('submit', async (e) => {
   }
 });
 
-// ==============================
-// OTP
-// ==============================
 otpForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   otpError.textContent = '';
@@ -120,7 +108,7 @@ otpForm.addEventListener('submit', async (e) => {
     const { error } = await supabase.auth.verifyOtp({
       email: pendingEmail,
       token: token,
-      type: 'email',
+      type: 'email'
     });
 
     if (error) throw error;
@@ -142,11 +130,8 @@ backBtn.addEventListener('click', () => {
   otpError.textContent = '';
 });
 
-// ==============================
-// Auth State (برای کاربران عادی)
-// ==============================
 supabase.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
+  if (session && session.user) {
     currentUser = session.user;
     isOwner = false;
     await loadProfile();
@@ -159,11 +144,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   }
 });
 
-// ==============================
-// Init
-// ==============================
 (async () => {
-  // چک کردن مالک
   if (localStorage.getItem('lumera_owner') === 'true') {
     isOwner = true;
     currentUser = { id: 'owner-local', email: OWNER_EMAIL };
@@ -172,55 +153,51 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     return;
   }
 
-  // چک کردن کاربر عادی
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
+  const { data } = await supabase.auth.getSession();
+  if (data && data.session && data.session.user) {
+    currentUser = data.session.user;
     await loadProfile();
     showChatScreen();
   }
 })();
 
-// ==============================
-// Profile
-// ==============================
 async function loadProfile() {
   if (!currentUser) return;
 
-  let { data, error } = await supabase
+  let result = await supabase
     .from('profiles')
     .select('*')
     .eq('id', currentUser.id)
     .maybeSingle();
 
+  let data = result.data;
+  let error = result.error;
+
   if (error || !data) {
     const displayName = isOwner ? 'مالک' : extractNameFromEmail(currentUser.email);
-    const { data: newProfile, error: insertError } = await supabase
+    const insertResult = await supabase
       .from('profiles')
       .insert({
         id: currentUser.id,
         email: currentUser.email,
-        display_name: displayName,
+        display_name: displayName
       })
       .select()
       .maybeSingle();
 
-    if (insertError) {
+    if (insertResult.error) {
       currentProfile = { display_name: displayName, email: currentUser.email };
     } else {
-      currentProfile = newProfile || { display_name: displayName, email: currentUser.email };
+      currentProfile = insertResult.data || { display_name: displayName, email: currentUser.email };
     }
   } else {
     currentProfile = data;
   }
 
   const prefix = isOwner ? '👑 ' : '';
-  userGreeting.textContent = `${prefix}سلام ${currentProfile.display_name} 👋`;
+  userGreeting.textContent = prefix + 'سلام ' + currentProfile.display_name + ' 👋';
 }
 
-// ==============================
-// Screens
-// ==============================
 function showLoginScreen() {
   loginScreen.classList.add('active');
   chatScreen.classList.remove('active');
@@ -239,53 +216,27 @@ function showChatScreen() {
   chatScreen.classList.add('active');
 
   messagesEl.innerHTML = '';
-  const name = currentProfile?.display_name || 'دوست عزیز';
+  const name = currentProfile ? currentProfile.display_name : 'دوست عزیز';
   const greeting = isOwner
-    ? `👑 سلام مالک عزیز ${name}! به Lumera خوش آمدی.`
-    : `سلام ${name}! من Lumera هستم. چطور می‌تونم کمکت کنم؟ 🌟`;
+    ? '👑 سلام مالک عزیز ' + name + '! به Lumera خوش آمدی.'
+    : 'سلام ' + name + '! من Lumera هستم. چطور می‌تونم کمکت کنم؟ 🌟';
   showSystemMessage(greeting);
 
-  ensureConversation();
   userInput.focus();
 }
 
-// ==============================
-// Conversation
-// ==============================
-async function ensureConversation() {
-  if (currentConversationId) return currentConversationId;
-
-  // برای مالک، ID لوکال استفاده می‌کنیم
-  const userId = isOwner ? 'owner-local' : currentUser.id;
-
-  const { data, error } = await supabase
-    .from('conversations')
-    .insert({ user_id: userId, title: 'گفتگوی جدید' })
-    .select()
-    .maybeSingle();
-
-  if (error) {
-    console.error('Conversation error:', error);
-    return null;
-  }
-
-  currentConversationId = data.id;
-  return currentConversationId;
-}
-
-// ==============================
-// Messages UI
-// ==============================
 function addMessage(role, content) {
   const div = document.createElement('div');
-  div.className = `message ${role}`;
+  div.className = 'message ' + role;
   div.textContent = content;
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
   return div;
 }
 
-function showSystemMessage(text) { addMessage('system', text); }
+function showSystemMessage(text) {
+  addMessage('system', text);
+}
 
 function showTyping() {
   const div = document.createElement('div');
@@ -297,11 +248,11 @@ function showTyping() {
   return div;
 }
 
-function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
 
-// ==============================
-// Send Message
-// ==============================
 chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (isSending) return;
@@ -315,23 +266,21 @@ chatForm.addEventListener('submit', async (e) => {
   userInput.style.height = 'auto';
 
   addMessage('user', text);
-
   showTyping();
 
   try {
     const { data, error } = await supabase.functions.invoke('chat', {
       body: {
         message: text,
-        conversationId: currentConversationId,
-        userName: currentProfile?.display_name || 'کاربر',
-        isOwner: isOwner,
-      },
+        userName: currentProfile ? currentProfile.display_name : 'کاربر',
+        isOwner: isOwner
+      }
     });
 
     removeTyping();
     if (error) throw error;
 
-    const reply = data?.reply || 'متأسفم، پاسخی دریافت نشد.';
+    const reply = (data && data.reply) ? data.reply : 'متأسفم، پاسخی دریافت نشد.';
     addMessage('assistant', reply);
   } catch (err) {
     console.error(err);
@@ -356,9 +305,6 @@ userInput.addEventListener('keydown', (e) => {
   }
 });
 
-// ==============================
-// Logout
-// ==============================
 logoutBtn.addEventListener('click', async () => {
   localStorage.removeItem('lumera_owner');
   await supabase.auth.signOut();
