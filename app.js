@@ -2,7 +2,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DALm5phLFNf8pf7q7Pl3Mg_KZPnwKAJ';
-
 const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -46,14 +45,11 @@ function extractNameFromEmail(email) {
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   emailError.textContent = '';
-
   const email = emailInput.value.trim().toLowerCase();
-
   if (!isValidEmail(email)) {
     emailError.textContent = 'لطفاً یک ایمیل معتبر وارد کنید';
     return;
   }
-
   if (email === OWNER_EMAIL.toLowerCase()) {
     isOwner = true;
     currentUser = { id: 'owner-local', email: OWNER_EMAIL };
@@ -62,18 +58,14 @@ loginForm.addEventListener('submit', async (e) => {
     showChatScreen();
     return;
   }
-
   loginBtn.disabled = true;
   loginBtn.querySelector('span').textContent = 'در حال ارسال...';
-
   try {
     const { error } = await supabase.auth.signInWithOtp({
       email: email,
       options: { shouldCreateUser: true }
     });
-
     if (error) throw error;
-
     pendingEmail = email;
     loginForm.style.display = 'none';
     otpForm.style.display = 'block';
@@ -92,25 +84,20 @@ loginForm.addEventListener('submit', async (e) => {
 otpForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   otpError.textContent = '';
-
   const token = otpInput.value.trim();
-
   if (token.length !== 6) {
     otpError.style.color = '#f87171';
     otpError.textContent = 'کد باید ۶ رقمی باشد';
     return;
   }
-
   verifyBtn.disabled = true;
   verifyBtn.querySelector('span').textContent = 'در حال تأیید...';
-
   try {
     const { error } = await supabase.auth.verifyOtp({
       email: pendingEmail,
       token: token,
       type: 'email'
     });
-
     if (error) throw error;
   } catch (err) {
     console.error(err);
@@ -128,9 +115,7 @@ backBtn.addEventListener('click', () => {
   loginBtn.querySelector('span').textContent = 'ورود به Lumera';
   otpInput.value = '';
   otpError.textContent = '';
-});
-
-supabase.auth.onAuthStateChange(async (event, session) => {
+});supabase.auth.onAuthStateChange(async (event, session) => {
   if (session && session.user) {
     currentUser = session.user;
     isOwner = false;
@@ -152,7 +137,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     showChatScreen();
     return;
   }
-
   const { data } = await supabase.auth.getSession();
   if (data && data.session && data.session.user) {
     currentUser = data.session.user;
@@ -163,16 +147,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
 async function loadProfile() {
   if (!currentUser) return;
-
   let result = await supabase
     .from('profiles')
     .select('*')
     .eq('id', currentUser.id)
     .maybeSingle();
-
   let data = result.data;
   let error = result.error;
-
   if (error || !data) {
     const displayName = isOwner ? 'مالک' : extractNameFromEmail(currentUser.email);
     const insertResult = await supabase
@@ -184,7 +165,6 @@ async function loadProfile() {
       })
       .select()
       .maybeSingle();
-
     if (insertResult.error) {
       currentProfile = { display_name: displayName, email: currentUser.email };
     } else {
@@ -193,7 +173,6 @@ async function loadProfile() {
   } else {
     currentProfile = data;
   }
-
   const prefix = isOwner ? '👑 ' : '';
   userGreeting.textContent = prefix + 'سلام ' + currentProfile.display_name + ' 👋';
 }
@@ -214,14 +193,12 @@ function showLoginScreen() {
 function showChatScreen() {
   loginScreen.classList.remove('active');
   chatScreen.classList.add('active');
-
   messagesEl.innerHTML = '';
   const name = currentProfile ? currentProfile.display_name : 'دوست عزیز';
   const greeting = isOwner
     ? '👑 سلام مالک عزیز ' + name + '! به Lumera خوش آمدی.'
     : 'سلام ' + name + '! من Lumera هستم. چطور می‌تونم کمکت کنم؟ 🌟';
   showSystemMessage(greeting);
-
   userInput.focus();
 }
 
@@ -251,23 +228,17 @@ function showTyping() {
 function removeTyping() {
   const el = document.getElementById('typing-indicator');
   if (el) el.remove();
-}
-
-chatForm.addEventListener('submit', async (e) => {
+}chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (isSending) return;
-
   const text = userInput.value.trim();
   if (!text) return;
-
   isSending = true;
   sendBtn.disabled = true;
   userInput.value = '';
   userInput.style.height = 'auto';
-
   addMessage('user', text);
   showTyping();
-
   try {
     const { data, error } = await supabase.functions.invoke('chat', {
       body: {
@@ -276,10 +247,8 @@ chatForm.addEventListener('submit', async (e) => {
         isOwner: isOwner
       }
     });
-
     removeTyping();
     if (error) throw error;
-
     const reply = (data && data.reply) ? data.reply : 'متأسفم، پاسخی دریافت نشد.';
     addMessage('assistant', reply);
   } catch (err) {
