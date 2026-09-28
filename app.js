@@ -9,13 +9,19 @@ let currentUser = null;
 let currentProfile = null;
 let currentConversationId = null;
 let isSending = false;
+let pendingEmail = '';
 
 const loginScreen = document.getElementById('login-screen');
 const chatScreen = document.getElementById('chat-screen');
 const loginForm = document.getElementById('login-form');
+const otpForm = document.getElementById('otp-form');
 const emailInput = document.getElementById('email');
 const emailError = document.getElementById('email-error');
 const loginBtn = document.getElementById('login-btn');
+const otpInput = document.getElementById('otp');
+const otpError = document.getElementById('otp-error');
+const verifyBtn = document.getElementById('verify-btn');
+const backBtn = document.getElementById('back-btn');
 const messagesEl = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
@@ -38,6 +44,9 @@ function extractNameFromEmail(email) {
   return cleaned || 'دوست عزیز';
 }
 
+// ==============================
+// مرحله ۱: ارسال کد
+// ==============================
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   emailError.textContent = '';
@@ -50,31 +59,79 @@ loginForm.addEventListener('submit', async (e) => {
   }
 
   loginBtn.disabled = true;
-  loginBtn.querySelector('span').textContent = 'در حال ورود...';
+  loginBtn.querySelector('span').textContent = 'در حال ارسال...';
 
   try {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: window.location.origin,
-      },
+      options: { shouldCreateUser: true },
     });
 
     if (error) throw error;
 
-    loginBtn.querySelector('span').textContent = 'ایمیل ارسال شد ✓';
-    emailError.style.color = '#4ade80';
-    emailError.textContent = `لینک ورود به ${email} ارسال شد. ایمیلت رو چک کن.`;
+    pendingEmail = email;
+    loginForm.style.display = 'none';
+    otpForm.style.display = 'block';
+    otpInput.focus();
+    otpError.style.color = '#4ade80';
+    otpError.textContent = `کد به ${email} ارسال شد. ایمیلت رو چک کن (Spam هم).`;
   } catch (err) {
     console.error(err);
     emailError.style.color = '#f87171';
-    emailError.textContent = err.message || 'خطا در ورود. دوباره تلاش کن.';
+    emailError.textContent = err.message || 'خطا در ارسال کد.';
     loginBtn.disabled = false;
-    loginBtn.querySelector('span').textContent = 'ورود به Lumera';
+    loginBtn.querySelector('span').textContent = 'ارسال کد ورود';
   }
 });
 
+// ==============================
+// مرحله ۲: تأیید کد
+// ==============================
+otpForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  otpError.textContent = '';
+
+  const token = otpInput.value.trim();
+
+  if (token.length !== 6) {
+    otpError.style.color = '#f87171';
+    otpError.textContent = 'کد باید ۶ رقمی باشد';
+    return;
+  }
+
+  verifyBtn.disabled = true;
+  verifyBtn.querySelector('span').textContent = 'در حال تأیید...';
+
+  try {
+    const { error } = await supabase.auth.verifyOtp({
+      email: pendingEmail,
+      token: token,
+      type: 'email',
+    });
+
+    if (error) throw error;
+    // onAuthStateChange بقیه کارها رو انجام میده
+  } catch (err) {
+    console.error(err);
+    otpError.style.color = '#f87171';
+    otpError.textContent = 'کد اشتباه یا منقضی شده. دوباره تلاش کن.';
+    verifyBtn.disabled = false;
+    verifyBtn.querySelector('span').textContent = 'تأیید و ورود';
+  }
+});
+
+backBtn.addEventListener('click', () => {
+  otpForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  loginBtn.disabled = false;
+  loginBtn.querySelector('span').textContent = 'ارسال کد ورود';
+  otpInput.value = '';
+  otpError.textContent = '';
+});
+
+// ==============================
+// Auth State
+// ==============================
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (session?.user) {
     currentUser = session.user;
@@ -96,6 +153,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   }
 })();
 
+// ==============================
+// Profile
+// ==============================
 async function loadProfile() {
   if (!currentUser) return;
 
@@ -103,7 +163,7 @@ async function loadProfile() {
     .from('profiles')
     .select('*')
     .eq('id', currentUser.id)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     const displayName = extractNameFromEmail(currentUser.email);
@@ -115,13 +175,13 @@ async function loadProfile() {
         display_name: displayName,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (insertError) {
       console.error('Profile insert error:', insertError);
       currentProfile = { display_name: displayName, email: currentUser.email };
     } else {
-      currentProfile = newProfile;
+      currentProfile = newProfile || { display_name: displayName, email: currentUser.email };
     }
   } else {
     currentProfile = data;
@@ -130,9 +190,20 @@ async function loadProfile() {
   userGreeting.textContent = `سلام ${currentProfile.display_name} 👋`;
 }
 
+// ==============================
+// Screens
+// ==============================
 function showLoginScreen() {
   loginScreen.classList.add('active');
   chatScreen.classList.remove('active');
+  otpForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  emailInput.value = '';
+  otpInput.value = '';
+  loginBtn.disabled = false;
+  loginBtn.querySelector('span').textContent = 'ارسال کد ورود';
+  verifyBtn.disabled = false;
+  verifyBtn.querySelector('span').textContent = 'تأیید و ورود';
 }
 
 function showChatScreen() {
@@ -147,17 +218,17 @@ function showChatScreen() {
   userInput.focus();
 }
 
+// ==============================
+// Conversation
+// ==============================
 async function ensureConversation() {
   if (currentConversationId) return currentConversationId;
 
   const { data, error } = await supabase
     .from('conversations')
-    .insert({
-      user_id: currentUser.id,
-      title: 'گفتگوی جدید',
-    })
+    .insert({ user_id: currentUser.id, title: 'گفتگوی جدید' })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Conversation error:', error);
@@ -168,6 +239,9 @@ async function ensureConversation() {
   return currentConversationId;
 }
 
+// ==============================
+// Messages UI
+// ==============================
 function addMessage(role, content) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
@@ -177,9 +251,7 @@ function addMessage(role, content) {
   return div;
 }
 
-function showSystemMessage(text) {
-  addMessage('system', text);
-}
+function showSystemMessage(text) { addMessage('system', text); }
 
 function showTyping() {
   const div = document.createElement('div');
@@ -191,10 +263,11 @@ function showTyping() {
   return div;
 }
 
-function removeTyping() {
-  document.getElementById('typing-indicator')?.remove();
-}
+function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
 
+// ==============================
+// Send Message
+// ==============================
 chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (isSending) return;
@@ -212,9 +285,7 @@ chatForm.addEventListener('submit', async (e) => {
   const convId = await ensureConversation();
   if (convId) {
     await supabase.from('messages').insert({
-      conversation_id: convId,
-      role: 'user',
-      content: text,
+      conversation_id: convId, role: 'user', content: text,
     });
   }
 
@@ -230,7 +301,6 @@ chatForm.addEventListener('submit', async (e) => {
     });
 
     removeTyping();
-
     if (error) throw error;
 
     const reply = data?.reply || 'متأسفم، پاسخی دریافت نشد.';
@@ -238,9 +308,7 @@ chatForm.addEventListener('submit', async (e) => {
 
     if (convId) {
       await supabase.from('messages').insert({
-        conversation_id: convId,
-        role: 'assistant',
-        content: reply,
+        conversation_id: convId, role: 'assistant', content: reply,
       });
     }
   } catch (err) {
