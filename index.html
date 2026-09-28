@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumera AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- صفحه ورود -->
+  <div id="login-screen" class="screen active">
+    <div class="login-card">
+      <div class="logo">
+        <div class="logo-icon">✦</div>
+        <h1>Lumera AI</h1>
+        <p class="tagline">هوش مصنوعی همراه شما</p>
+      </div>
+
+      <form id="login-form">
+        <div class="input-group">
+          <label for="email">ایمیل خود را وارد کنید</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="ali.reza@gmail.com"
+            required
+            autocomplete="email"
+          />
+          <span class="error-msg" id="email-error"></span>
+        </div>
+
+        <button type="submit" id="login-btn">
+          <span>ورود به Lumera</span>
+        </button>
+      </form>
+
+      <p class="hint">با ورود، شما قوانین استفاده را می‌پذیرید</p>
+    </div>
+  </div>
+
+  <!-- صفحه چت -->
+  <div id="chat-screen" class="screen">
+    <header class="chat-header">
+      <div class="header-left">
+        <div class="logo-icon small">✦</div>
+        <div>
+          <h2>Lumera AI</h2>
+          <span class="status" id="user-greeting">سلام!</span>
+        </div>
+      </div>
+      <button id="logout-btn" title="خروج">↩</button>
+    </header>
+
+    <main id="messages" class="messages"></main>
+
+    <footer class="chat-input-area">
+      <form id="chat-form">
+        <textarea
+          id="user-input"
+          placeholder="پیام خود را بنویسید..."
+          rows="1"
+          required
+        ></textarea>
+        <button type="submit" id="send-btn" title="ارسال">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </form>
+    </footer>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
