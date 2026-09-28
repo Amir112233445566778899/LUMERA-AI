@@ -3,6 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DALm5phLFNf8pf7q7Pl3Mg_KZPnwKAJ';
 
+// 🎯 ایمیل مالک
+const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
@@ -10,6 +13,7 @@ let currentProfile = null;
 let currentConversationId = null;
 let isSending = false;
 let pendingEmail = '';
+let isOwner = false;
 
 const loginScreen = document.getElementById('login-screen');
 const chatScreen = document.getElementById('chat-screen');
@@ -36,16 +40,12 @@ function isValidEmail(email) {
 
 function extractNameFromEmail(email) {
   const local = email.split('@')[0];
-  const cleaned = local
-    .replace(/[._-]+/g, ' ')
-    .replace(/[0-9]+/g, '')
-    .trim()
-    .replace(/\s+/g, ' ');
+  const cleaned = local.replace(/[._-]+/g, ' ').replace(/[0-9]+/g, '').trim().replace(/\s+/g, ' ');
   return cleaned || 'دوست عزیز';
 }
 
 // ==============================
-// مرحله ۱: ارسال کد
+// ورود
 // ==============================
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -58,6 +58,20 @@ loginForm.addEventListener('submit', async (e) => {
     return;
   }
 
+  // 🎯 اگه ایمیل مالک بود → مستقیم وارد شو (بدون Auth)
+  if (email === OWNER_EMAIL.toLowerCase()) {
+    isOwner = true;
+    currentUser = { id: 'owner-local', email: OWNER_EMAIL };
+    currentProfile = { display_name: 'مالک', email: OWNER_EMAIL };
+    
+    // ذخیره تو localStorage که بعد از رفرش یادش بمونه
+    localStorage.setItem('lumera_owner', 'true');
+    
+    showChatScreen();
+    return;
+  }
+
+  // کاربر عادی → ارسال OTP
   loginBtn.disabled = true;
   loginBtn.querySelector('span').textContent = 'در حال ارسال...';
 
@@ -74,18 +88,18 @@ loginForm.addEventListener('submit', async (e) => {
     otpForm.style.display = 'block';
     otpInput.focus();
     otpError.style.color = '#4ade80';
-    otpError.textContent = `کد به ${email} ارسال شد. ایمیلت رو چک کن (Spam هم).`;
+    otpError.textContent = `کد به ${email} ارسال شد. ایمیلت رو چک کن.`;
   } catch (err) {
     console.error(err);
     emailError.style.color = '#f87171';
     emailError.textContent = err.message || 'خطا در ارسال کد.';
     loginBtn.disabled = false;
-    loginBtn.querySelector('span').textContent = 'ارسال کد ورود';
+    loginBtn.querySelector('span').textContent = 'ورود به Lumera';
   }
 });
 
 // ==============================
-// مرحله ۲: تأیید کد
+// OTP
 // ==============================
 otpForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -110,11 +124,10 @@ otpForm.addEventListener('submit', async (e) => {
     });
 
     if (error) throw error;
-    // onAuthStateChange بقیه کارها رو انجام میده
   } catch (err) {
     console.error(err);
     otpError.style.color = '#f87171';
-    otpError.textContent = 'کد اشتباه یا منقضی شده. دوباره تلاش کن.';
+    otpError.textContent = 'کد اشتباه یا منقضی شده.';
     verifyBtn.disabled = false;
     verifyBtn.querySelector('span').textContent = 'تأیید و ورود';
   }
@@ -124,27 +137,42 @@ backBtn.addEventListener('click', () => {
   otpForm.style.display = 'none';
   loginForm.style.display = 'block';
   loginBtn.disabled = false;
-  loginBtn.querySelector('span').textContent = 'ارسال کد ورود';
+  loginBtn.querySelector('span').textContent = 'ورود به Lumera';
   otpInput.value = '';
   otpError.textContent = '';
 });
 
 // ==============================
-// Auth State
+// Auth State (برای کاربران عادی)
 // ==============================
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (session?.user) {
     currentUser = session.user;
+    isOwner = false;
     await loadProfile();
     showChatScreen();
-  } else {
+  } else if (!localStorage.getItem('lumera_owner')) {
     currentUser = null;
     currentProfile = null;
+    isOwner = false;
     showLoginScreen();
   }
 });
 
+// ==============================
+// Init
+// ==============================
 (async () => {
+  // چک کردن مالک
+  if (localStorage.getItem('lumera_owner') === 'true') {
+    isOwner = true;
+    currentUser = { id: 'owner-local', email: OWNER_EMAIL };
+    currentProfile = { display_name: 'مالک', email: OWNER_EMAIL };
+    showChatScreen();
+    return;
+  }
+
+  // چک کردن کاربر عادی
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
@@ -166,7 +194,7 @@ async function loadProfile() {
     .maybeSingle();
 
   if (error || !data) {
-    const displayName = extractNameFromEmail(currentUser.email);
+    const displayName = isOwner ? 'مالک' : extractNameFromEmail(currentUser.email);
     const { data: newProfile, error: insertError } = await supabase
       .from('profiles')
       .insert({
@@ -178,7 +206,6 @@ async function loadProfile() {
       .maybeSingle();
 
     if (insertError) {
-      console.error('Profile insert error:', insertError);
       currentProfile = { display_name: displayName, email: currentUser.email };
     } else {
       currentProfile = newProfile || { display_name: displayName, email: currentUser.email };
@@ -187,7 +214,8 @@ async function loadProfile() {
     currentProfile = data;
   }
 
-  userGreeting.textContent = `سلام ${currentProfile.display_name} 👋`;
+  const prefix = isOwner ? '👑 ' : '';
+  userGreeting.textContent = `${prefix}سلام ${currentProfile.display_name} 👋`;
 }
 
 // ==============================
@@ -201,7 +229,7 @@ function showLoginScreen() {
   emailInput.value = '';
   otpInput.value = '';
   loginBtn.disabled = false;
-  loginBtn.querySelector('span').textContent = 'ارسال کد ورود';
+  loginBtn.querySelector('span').textContent = 'ورود به Lumera';
   verifyBtn.disabled = false;
   verifyBtn.querySelector('span').textContent = 'تأیید و ورود';
 }
@@ -212,7 +240,10 @@ function showChatScreen() {
 
   messagesEl.innerHTML = '';
   const name = currentProfile?.display_name || 'دوست عزیز';
-  showSystemMessage(`سلام ${name}! من Lumera هستم. چطور می‌تونم کمکت کنم؟ 🌟`);
+  const greeting = isOwner
+    ? `👑 سلام مالک عزیز ${name}! به Lumera خوش آمدی.`
+    : `سلام ${name}! من Lumera هستم. چطور می‌تونم کمکت کنم؟ 🌟`;
+  showSystemMessage(greeting);
 
   ensureConversation();
   userInput.focus();
@@ -224,9 +255,12 @@ function showChatScreen() {
 async function ensureConversation() {
   if (currentConversationId) return currentConversationId;
 
+  // برای مالک، ID لوکال استفاده می‌کنیم
+  const userId = isOwner ? 'owner-local' : currentUser.id;
+
   const { data, error } = await supabase
     .from('conversations')
-    .insert({ user_id: currentUser.id, title: 'گفتگوی جدید' })
+    .insert({ user_id: userId, title: 'گفتگوی جدید' })
     .select()
     .maybeSingle();
 
@@ -282,21 +316,15 @@ chatForm.addEventListener('submit', async (e) => {
 
   addMessage('user', text);
 
-  const convId = await ensureConversation();
-  if (convId) {
-    await supabase.from('messages').insert({
-      conversation_id: convId, role: 'user', content: text,
-    });
-  }
-
   showTyping();
 
   try {
     const { data, error } = await supabase.functions.invoke('chat', {
       body: {
         message: text,
-        conversationId: convId,
+        conversationId: currentConversationId,
         userName: currentProfile?.display_name || 'کاربر',
+        isOwner: isOwner,
       },
     });
 
@@ -305,12 +333,6 @@ chatForm.addEventListener('submit', async (e) => {
 
     const reply = data?.reply || 'متأسفم، پاسخی دریافت نشد.';
     addMessage('assistant', reply);
-
-    if (convId) {
-      await supabase.from('messages').insert({
-        conversation_id: convId, role: 'assistant', content: reply,
-      });
-    }
   } catch (err) {
     console.error(err);
     removeTyping();
@@ -334,7 +356,15 @@ userInput.addEventListener('keydown', (e) => {
   }
 });
 
+// ==============================
+// Logout
+// ==============================
 logoutBtn.addEventListener('click', async () => {
+  localStorage.removeItem('lumera_owner');
   await supabase.auth.signOut();
   currentConversationId = null;
+  isOwner = false;
+  currentUser = null;
+  currentProfile = null;
+  showLoginScreen();
 });
