@@ -20,7 +20,7 @@
         <p class="tagline">هوش مصنوعی همراه شما</p>
       </div>
 
-      <!-- مرحله ۱: ایمیل -->
+      <!-- فرم اصلی ایمیل -->
       <form id="login-form">
         <div class="input-group">
           <label for="email">ایمیل خود را وارد کنید</label>
@@ -28,11 +28,11 @@
           <span class="error-msg" id="email-error"></span>
         </div>
         <button type="submit" id="login-btn">
-          <span>ارسال کد ورود</span>
+          <span>ورود به Lumera</span>
         </button>
       </form>
 
-      <!-- مرحله ۲: کد ۶ رقمی -->
+      <!-- فرم کد OTP (برای کاربران عادی) -->
       <form id="otp-form" style="display:none;">
         <div class="input-group">
           <label for="otp">کد ۶ رقمی ارسال شده به ایمیلت را وارد کن</label>
@@ -43,6 +43,19 @@
           <span>تأیید و ورود</span>
         </button>
         <button type="button" id="back-btn" style="background:transparent; border:1px solid var(--border); color:var(--text-dim); margin-top:10px;">بازگشت</button>
+      </form>
+
+      <!-- فرم پسورد مالک (فقط برای ایمیل مالک) -->
+      <form id="owner-form" style="display:none;">
+        <div class="input-group">
+          <label for="owner-pass">رمز مالک را وارد کن</label>
+          <input type="password" id="owner-pass" placeholder="••••••••" />
+          <span class="error-msg" id="owner-error"></span>
+        </div>
+        <button type="submit" id="owner-btn">
+          <span>ورود مالک</span>
+        </button>
+        <button type="button" id="owner-back-btn" style="background:transparent; border:1px solid var(--border); color:var(--text-dim); margin-top:10px;">بازگشت</button>
       </form>
 
       <p class="hint">با ورود، شما قوانین استفاده را می‌پذیرید</p>
