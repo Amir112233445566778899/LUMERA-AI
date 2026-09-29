@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="google" content="notranslate"/>
+<title>Lumera AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap');
+:root, [data-theme="space"]{
+  --bg:#050814; --card:rgba(15,23,42,.82); --line:rgba(148,163,184,.2);
+  --text:#e8eefc; --muted:#94a3b8; --a:#22d3ee; --b:#a78bfa;
+}
+[data-theme="dark"]{
+  --bg:#0a0a0a; --card:rgba(24,24,24,.9); --line:rgba(255,255,255,.12);
+  --text:#f5f5f5; --muted:#a3a3a3; --a:#60a5fa; --b:#818cf8;
+}
+[data-theme="light"]{
+  --bg:#f1f5f9; --card:rgba(255,255,255,.92); --line:rgba(15,23,42,.12);
+  --text:#0f172a; --muted:#64748b; --a:#0891b2; --b:#7c3aed;
+}
+[data-theme="sunset"]{
+  --bg:#1a0b0b; --card:rgba(40,15,15,.88); --line:rgba(251,146,60,.2);
+  --text:#fff7ed; --muted:#fdba74; --a:#fb923c; --b:#f43f5e;
+}
+[data-theme="ocean"]{
+  --bg:#021526; --card:rgba(3,40,60,.88); --line:rgba(34,211,238,.22);
+  --text:#e0f7ff; --muted:#7dd3fc; --a:#06b6d4; --b:#3b82f6;
+}
+[data-theme="neon"]{
+  --bg:#0a0014; --card:rgba(30,0,50,.9); --line:rgba(236,72,153,.25);
+  --text:#fdf4ff; --muted:#e879f9; --a:#f472b6; --b:#22d3ee;
+}
+[data-theme="forest"]{
+  --bg:#05140a; --card:rgba(10,40,20,.9); --line:rgba(74,222,128,.2);
+  --text:#ecfdf5; --muted:#86efac; --a:#4ade80; --b:#14b8a6;
+}
+[data-theme="gold"]{
+  --bg:#1a1408; --card:rgba(40,30,10,.9); --line:rgba(251,191,36,.25);
+  --text:#fffbeb; --muted:#fcd34d; --a:#fbbf24; --b:#f97316;
+}
+[data-theme="ice"]{
+  --bg:#0b1220; --card:rgba(15,30,50,.9); --line:rgba(147,197,253,.25);
+  --text:#eff6ff; --muted:#93c5fd; --a:#60a5fa; --b:#a5b4fc;
+}
+[data-theme="rose"]{
+  --bg:#1a0a12; --card:rgba(40,15,30,.9); --line:rgba(251,113,133,.22);
+  --text:#fff1f2; --muted:#fda4af; --a:#fb7185; --b:#e879f9;
+}
+[data-theme="midnight"]{
+  --bg:#020617; --card:rgba(15,23,42,.95); --line:rgba(99,102,241,.25);
+  --text:#e2e8f0; --muted:#94a3b8; --a:#818cf8; --b:#c084fc;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100dvh; font-family:Vazirmatn,system-ui,sans-serif;
+  color:var(--text); background:var(--bg);
+  background-image:radial-gradient(1000px 500px at 10% -10%, color-mix(in srgb, var(--a) 20%, transparent), transparent 55%);
+}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:20px;backdrop-filter:blur(16px)}
+.btn{border:0;border-radius:14px;padding:.8rem 1rem;font-weight:700;cursor:pointer;color:var(--text)}
+.btn-primary{background:linear-gradient(135deg,var(--a),var(--b));color:#041018}
+.btn-ghost{background:color-mix(in srgb,var(--text) 8%, transparent)}
+.input{width:100%;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 70%, transparent);color:var(--text);padding:.85rem 1rem;outline:none}
+.msg-user{background:color-mix(in srgb,var(--a) 18%, transparent)}
+.msg-ai{background:color-mix(in srgb,var(--bg) 80%, transparent);border:1px solid var(--line)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--a) 20%,transparent);color:var(--a)}
+.badge.owner{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1917}
+.hidden{display:none!important}
+#settings-modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px}
+#settings-modal.open{display:flex}
+#fab{position:fixed;bottom:20px;left:20px;z-index:90;border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,var(--a),var(--b));color:#041018;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.err{color:#fca5a5;font-size:12px;min-height:18px}
+.ok{color:#6ee7b7;font-size:12px}
+</style>
+</head>
+<body data-theme="space">
+
+<button id="fab" type="button" onclick="openSettings()">تنظیمات</button>
+
+<div id="auth" class="min-h-dvh flex items-center justify-center p-4">
+  <div class="glass w-full max-w-md p-6 space-y-4">
+    <div class="text-center">
+      <div class="text-3xl font-extrabold" style="background:linear-gradient(135deg,var(--a),var(--b));-webkit-background-clip:text;color:transparent">Lumera AI</div>
+      <p class="text-sm mt-1" style="color:var(--muted)">هوش مصنوعی · ویس · تصویر</p>
+    </div>
+    <div class="space-y-3">
+      <label class="text-xs" style="color:var(--muted)">ایمیل</label>
+      <input id="email" class="input" type="email" placeholder="you@email.com" autocomplete="email" oninput="liveValidateEmail()"/>
+      <p id="email-hint" class="err"></p>
+      <button class="btn btn-primary w-full" id="btn-enter" onclick="startAuth()">ورود</button>
+      <button class="btn btn-ghost w-full" onclick="openSettings()">تنظیمات</button>
+      
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden min-h-dvh max-w-3xl mx-auto flex flex-col p-3 gap-3">
+  <header class="glass px-4 py-3 flex items-center justify-between">
+    <div>
+      <div class="font-extrabold text-lg">Lumera AI</div>
+      <div class="text-[11px]" style="color:var(--muted)">سلام <b id="display-name"></b> · <span id="who"></span> <span id="role" class="badge"></span></div>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn btn-ghost text-xs" onclick="openSettings()">تنظیمات</button>
+      <button class="btn btn-ghost text-xs" onclick="logout()">خروج</button>
+    </div>
+  </header>
+  <main id="chat" class="glass flex-1 p-3 overflow-y-auto space-y-3" style="min-height:50vh;max-height:calc(100dvh - 200px)"></main>
+  <div class="glass p-3 space-y-2">
+    <div class="flex gap-2 items-end">
+      <button class="btn btn-ghost" onclick="toggleVoice()">🎤</button>
+      <textarea id="prompt" class="input" rows="2" placeholder="پیام به Lumera AI..." style="resize:none"></textarea>
+      <button class="btn btn-primary" onclick="sendText()">ارسال</button>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn btn-ghost flex-1 text-xs" onclick="sendImage()">ساخت تصویر</button>
+      <button class="btn btn-ghost flex-1 text-xs" onclick="clearChat()">پاک کردن</button>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="glass w-full max-w-md p-5 space-y-3" onclick="event.stopPropagation()">
+    <h2 class="font-bold text-lg">تنظیمات</h2>
+    <div>
+      <p class="text-xs mb-2" style="color:var(--muted)">تم</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="btn btn-ghost text-xs" onclick="setTheme('space')">فضایی</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('dark')">تاریک</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('light')">روشن</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('sunset')">غروب</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('ocean')">اقیانوس</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('neon')">نئون</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('forest')">جنگل</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('gold')">طلایی</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('ice')">یخی</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('rose')">رز</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('midnight')">نیمه‌شب</button>
+      </div>
+    </div>
+    <div id="owner-key-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
+      <p class="text-xs font-bold">فقط مالک · OpenAI API Key</p>
+      <input id="openai-key" class="input" type="password" placeholder="sk-..."/>
+      <button class="btn btn-primary w-full text-sm" onclick="saveOwnerKey()">ذخیره کلید</button>
+      <p class="text-[10px]" style="color:var(--muted)">کلید روی Supabase ذخیره می‌شود.</p>
+    </div>
+    <button class="btn btn-ghost w-full" onclick="closeSettings()">بستن</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eXhvcnp5cnp2enB3cnRxbnlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMzkwMTUsImV4cCI6MjEwNTgxNTAxNX0.JaLT_49x517O5gtY9FrAJc3i5xFKjNy-CCyo7kML76I';
+const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
+const OWNER_EMAILS = ['amiralihesamfar@gmail.com','amiralihesam@gmail.com'];
+const SYSTEM = 'You are Lumera AI. Year is 2026. Reply in the user language (often Persian). Be natural and concise.';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let sessionUser = null;
+let isOwner = false;
+let cachedOpenAIKey = '';
+let voiceRec = null;
+
+const FAKE_DOMAINS = ['mailinator.com','tempmail.com','10minutemail.com','guerrillamail.com','trashmail.com','yopmail.com','temp-mail.org','fakeinbox.com','sharklasers.com','getnada.com'];
+const KNOWN_OK = ['gmail.com','googlemail.com','yahoo.com','yahoo.co.uk','outlook.com','hotmail.com','live.com','msn.com','icloud.com','me.com','proton.me','protonmail.com','aol.com','mail.com','zoho.com','yandex.com','yandex.ru','mail.ru','gmx.com','gmx.de','qq.com','163.com','126.com'];
+
+function $(id){ return document.getElementById(id); }
+function normEmail(e){ return String(e||'').trim().toLowerCase(); }
+function isOwnerEmail(email){
+  const e = normEmail(email);
+  const list = ['amiralihesamfar@gmail.com','amiralihesam@gmail.com'];
+  return list.indexOf(e) >= 0;
+}
+
+/** ربات اعتبارسنجی ایمیل */
+function emailBotCheck(raw){
+  const email = normEmail(raw);
+  if(!email) return { ok:false, msg:'ایمیل را وارد کن' };
+  if(email.length > 254) return { ok:false, msg:'ایمیل خیلی بلند است' };
+  if(email.indexOf(' ') >= 0) return { ok:false, msg:'فاصله در ایمیل مجاز نیست' };
+  // ساختار استاندارد
+  const re = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/i;
+  if(!re.test(email)) return { ok:false, msg:'این یک ایمیل واقعی نیست (مثال: name@gmail.com)' };
+  const parts = email.split('@');
+  if(parts.length !== 2) return { ok:false, msg:'فرمت ایمیل اشتباه است' };
+  const local = parts[0], domain = parts[1];
+  if(!local || local.length < 1) return { ok:false, msg:'قبل از @ چیزی نیست' };
+  if(local.startsWith('.') || local.endsWith('.') || local.includes('..')) return { ok:false, msg:'نقطه‌گذاری نامعتبر در ایمیل' };
+  if(!domain.includes('.')) return { ok:false, msg:'دامنه ایمیل ناقص است' };
+  if(domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) return { ok:false, msg:'دامنه نامعتبر است' };
+  const tld = domain.split('.').pop();
+  if(!tld || tld.length < 2) return { ok:false, msg:'پسوند دامنه کوتاه است' };
+  if(FAKE_DOMAINS.some(d => domain === d || domain.endsWith('.'+d))) return { ok:false, msg:'ایمیل موقت/فیک قبول نیست' };
+  // هشدار نرم برای دامنه ناشناس — ولی اجازه ورود
+  const known = KNOWN_OK.some(d => domain === d || domain.endsWith('.'+d));
+  return { ok:true, msg: known ? 'ایمیل معتبر است ✓' : 'فرمت درست است ✓', email, local, domain };
+}
+
+function liveValidateEmail(){
+  const r = emailBotCheck($('email').value);
+  const hint = $('email-hint');
+  if(!String($('email').value||'').trim()){ hint.textContent=''; hint.className='err'; return; }
+  if(r.ok){ hint.textContent = r.msg; hint.className='ok'; }
+  else { hint.textContent = r.msg; hint.className='err'; }
+}
+
+/** از local part ایمیل اسم فارسی/خوانا بساز */
+function nameFromEmail(email){
+  const local = normEmail(email).split('@')[0] || 'کاربر';
+  // جدا کردن با . _ - عدد
+  let parts = local.split(/[._\-+]+/).filter(Boolean);
+  if(!parts.length) parts = [local];
+  // تبدیل تلفظ ساده لاتین رایج به فارسی برای چند نام پرتکرار
+  const map = {
+    amir:'امیر', ali:'علی', hesam:'حسام', hossein:'حسین', hassan:'حسن',
+    reza:'رضا', mohammad:'محمد', mahdi:'مهدی', mehdi:'مهدی', sara:'سارا',
+    fateme:'فاطمه', fatemeh:'فاطمه', zahra:'زهرا', maryam:'مریم',
+    nima:'نیما', arya:'آریا', arya:'آریا', pouya:'پویا', pars:'پارس',
+    far:'فر', farhad:'فرهاد', milad:'میلاد', sina:'سینا', kian:'کیان',
+    aria:'آریا', shahin:'شاهین', behnam:'بهنام', behzad:'بهزاد'
+  };
+  const out = parts.map(p => {
+    const k = p.toLowerCase().replace(/\d+/g,'');
+    if(map[k]) return map[k];
+    // اگر فقط لاتین است، Capitals
+    if(/^[a-zA-Z]+$/.test(p)) return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    return p;
+  });
+  // amiralihesamfar → سعی کن تکه کند اگر map تکی جواب نداد
+  if(out.length === 1 && out[0].length > 6 && /^[a-zA-Z\u0600-\u06FF]+$/.test(parts[0])){
+    const s = parts[0].toLowerCase();
+    const keys = Object.keys(map).sort((a,b)=>b.length-a.length);
+    let rest = s, built = [];
+    for(const k of keys){
+      if(rest.includes(k)){
+        // greedy from start
+      }
+    }
+    // greedy from start
+    rest = s; built = [];
+    while(rest.length){
+      let hit = null;
+      for(const k of keys){ if(rest.startsWith(k)){ hit=k; break; } }
+      if(hit){ built.push(map[hit]); rest = rest.slice(hit.length); }
+      else { built.push(rest); break; }
+    }
+    if(built.length > 1) return built.join(' ');
+  }
+  return out.join(' ');
+}
+
+function openSettings(){
+  $('settings-modal').classList.add('open');
+  const own = isOwner || (sessionUser && isOwnerEmail(sessionUser.email));
+  $('owner-key-box').classList.toggle('hidden', !own);
+  if(own){ $('openai-key').value = ''; $('openai-key').placeholder = cachedOpenAIKey ? 'کلید ذخیره شده — برای تغییر کلید جدید بزن' : 'sk-proj-...'; }
+}
+function closeSettings(){ $('settings-modal').classList.remove('open'); }
+function setTheme(name){
+  document.body.setAttribute('data-theme', name);
+  localStorage.setItem('lumera_ai_theme', name);
+}
+(function(){ const t=localStorage.getItem('lumera_ai_theme'); if(t) setTheme(t); })();
+
+async function loadOpenAIKey(){
+  cachedOpenAIKey = '';
+  try{
+    const { data, error } = await sb.from('lumera_ai_config').select('openai_key').eq('id', 1).maybeSingle();
+    if(!error && data && data.openai_key && String(data.openai_key).indexOf('*') < 0 && String(data.openai_key).length > 20){
+      cachedOpenAIKey = String(data.openai_key).replace(/\s+/g,'');
+    }
+  }catch(e){ console.log(e); }
+  if(!cachedOpenAIKey){
+    const local = localStorage.getItem('lumera_openai_key');
+    if(local && local.indexOf('*') < 0 && local.length > 20) cachedOpenAIKey = local.replace(/\s+/g,'');
+  }
+}
+
+async function saveOwnerKey(){
+  if(!(isOwner || (sessionUser && isOwnerEmail(sessionUser.email)))){ alert('فقط مالک'); return; }
+  let key = ($('openai-key').value || '').trim();
+  if(!key || key === '********' || key.indexOf('*') >= 0){
+    alert('کلید قبلی حفظ شد. برای عوض کردن، کلید کامل جدید را وارد کن.');
+    closeSettings();
+    return;
+  }
+  if(!(key.startsWith('sk-') || key.startsWith('sk-proj-'))){
+    alert('کلید باید با sk- شروع شود');
+    return;
+  }
+  key = key.replace(/\s+/g, '');
+  cachedOpenAIKey = key;
+  localStorage.setItem('lumera_openai_key', key);
+  try{
+    const { error } = await sb.from('lumera_ai_config').upsert({ id:1, openai_key:key, updated_at:new Date().toISOString() });
+    if(error) throw error;
+    alert('کلید با موفقیت ذخیره شد');
+  }catch(e){
+    console.error(e);
+    alert('روی این دستگاه ذخیره شد. ' + (e.message||''));
+  }
+  closeSettings();
+}
+
+async function startAuth(){
+  const r = emailBotCheck($('email').value);
+  liveValidateEmail();
+  if(!r.ok) return;
+  const email = r.email;
+  const displayName = nameFromEmail(email);
+  sessionUser = {
+    email,
+    displayName,
+    owner: isOwnerEmail(email)
+  };
+  isOwner = sessionUser.owner;
+  localStorage.setItem('lumera_ai_user', JSON.stringify(sessionUser));
+  try{ await saveUserToDb(email, displayName, isOwner); }catch(e){}
+  await enterApp();
+}
+
+async function enterApp(){
+  $('auth').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  // همیشه از روی ایمیل مالک را تشخیص بده (نه فقط localStorage)
+  isOwner = isOwnerEmail(sessionUser && sessionUser.email);
+  if(sessionUser){
+    sessionUser.owner = isOwner;
+    if(!sessionUser.displayName) sessionUser.displayName = nameFromEmail(sessionUser.email);
+    localStorage.setItem('lumera_ai_user', JSON.stringify(sessionUser));
+  }
+  $('who').textContent = sessionUser.email;
+  $('display-name').textContent = sessionUser.displayName || nameFromEmail(sessionUser.email);
+  $('role').textContent = isOwner ? 'مالک' : 'کاربر';
+  $('role').className = 'badge' + (isOwner ? ' owner' : '');
+  await loadOpenAIKey();
+  if(!$('chat').dataset.ready){
+    $('chat').dataset.ready='1';
+    const n = sessionUser.displayName || nameFromEmail(sessionUser.email);
+    addMsg('ai', 'سلام '+n+'! من Lumera AI هستم.
+متن بفرست، با ویس حرف بزن، یا تصویر بساز.');
+  }
+}
+
+function logout(){
+  localStorage.removeItem('lumera_ai_user');
+  location.reload();
+}
+
+function addMsg(role, text, extraHtml){
+  const div=document.createElement('div');
+  div.className='flex '+(role==='user'?'justify-start':'justify-end');
+  const b=document.createElement('div');
+  b.className='max-w-[90%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap '+(role==='user'?'msg-user':'msg-ai');
+  b.innerHTML = escapeHtml(text) + (extraHtml||'');
+  div.appendChild(b);
+  $('chat').appendChild(div);
+  $('chat').scrollTop = $('chat').scrollHeight;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+async function callChat(text){
+  if(!cachedOpenAIKey) await loadOpenAIKey();
+  const name = (sessionUser && sessionUser.displayName) || 'کاربر';
+  const messages = [
+    {role:'system', content: SYSTEM + ' The user prefers to be called: ' + name },
+    {role:'user', content:text}
+  ];
+
+  // 1) Edge Function روی Supabase (بدون مشکل CORS)
+  try{
+    const { data, error } = await sb.functions.invoke('lumera-ai', {
+      body: { type:'chat', messages: messages, model:'gpt-4o-mini' }
+    });
+    if(!error && data){
+      if(data.error === 'NO_KEY') throw new Error('NO_KEY');
+      if(data.error && !data.choices) throw new Error(data.error.message || data.error);
+      if(data.choices && data.choices[0] && data.choices[0].message){
+        return data.choices[0].message.content;
+      }
+    }
+  }catch(e){ console.log('edge', e); }
+
+  // 2) مستقیم OpenAI
+  if(cachedOpenAIKey){
+    try{
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + cachedOpenAIKey },
+        body: JSON.stringify({ model:'gpt-4o-mini', messages:messages })
+      });
+      const data = await res.json().catch(function(){return {};});
+      if(res.ok && data.choices && data.choices[0]) return data.choices[0].message.content;
+      if(data.error && data.error.message) console.log(data.error.message);
+    }catch(e){ console.log('direct', e); }
+  }
+
+  // 3) پاسخ کمکی آنلاین
+  try{
+    const pr = await fetch('https://text.pollinations.ai/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages:messages, model:'openai' })
+    });
+    if(pr.ok){
+      const t = await pr.text();
+      if(t && t.trim()) return t.trim();
+    }
+  }catch(e){}
+
+  return 'الان به سرویس AI وصل نشدم. این‌ها را چک کن:\n1) کلید را دوباره در تنظیمات ذخیره کن\n2) Edge Function با نام lumera-ai را Deploy کن\n3) اگر در ایران هستی فیلترشکن را روشن کن';
+}
+
+async function callImage(prompt){
+  if(!cachedOpenAIKey) await loadOpenAIKey();
+  // Edge
+  try{
+    const { data, error } = await sb.functions.invoke('lumera-ai', {
+      body: { type:'image', prompt: prompt }
+    });
+    if(!error && data && data.data && data.data[0] && data.data[0].url) return data.data[0].url;
+  }catch(e){ console.log('edge img', e); }
+  // Direct
+  if(cachedOpenAIKey){
+    try{
+      const res = await fetch('https://api.openai.com/v1/images/generations', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+cachedOpenAIKey },
+        body: JSON.stringify({ model:'dall-e-3', prompt:prompt, size:'1024x1024', n:1 })
+      });
+      const data = await res.json().catch(function(){return {};});
+      if(res.ok && data.data && data.data[0]) return data.data[0].url;
+    }catch(e){}
+  }
+  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(prompt)+'?width=768&height=768&nologo=true&seed='+Date.now();
+}
+
+async function sendText(){
+  const t=$('prompt').value.trim(); if(!t) return;
+  $('prompt').value='';
+  addMsg('user', t);
+  addMsg('ai', '...');
+  const nodes=$('chat').querySelectorAll('.msg-ai');
+  const last=nodes[nodes.length-1];
+  try{
+    const ans=await callChat(t);
+    last.parentElement.remove();
+    addMsg('ai', ans);
+    speak(ans);
+  }catch(e){ last.parentElement.remove(); addMsg('ai','خطا: '+(e.message||e)); }
+}
+
+async function sendImage(){
+  const t=$('prompt').value.trim()||'cinematic space art';
+  addMsg('user','[تصویر] '+t);
+  addMsg('ai','ساخت تصویر...');
+  const nodes=$('chat').querySelectorAll('.msg-ai');
+  const last=nodes[nodes.length-1];
+  try{
+    const url=await callImage(t);
+    last.parentElement.remove();
+    addMsg('ai','تصویر:', '<div class="mt-2"><img src="'+url+'" style="border-radius:14px;max-width:100%;max-height:360px;object-fit:cover"/></div>');
+    $('prompt').value='';
+  }catch(e){ last.parentElement.remove(); addMsg('ai','خطا: '+(e.message||e)); }
+}
+
+function clearChat(){ $('chat').innerHTML=''; $('chat').dataset.ready=''; enterApp(); }
+function speak(text){ try{ if(!speechSynthesis)return; const u=new SpeechSynthesisUtterance(String(text).slice(0,400)); u.lang='fa-IR'; speechSynthesis.speak(u);}catch(e){} }
+function toggleVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addMsg('ai','ویس پشتیبانی نمی‌شود'); return; }
+  if(voiceRec){ try{voiceRec.stop()}catch(e){} voiceRec=null; return; }
+  voiceRec=new SR(); voiceRec.lang='fa-IR';
+  voiceRec.onresult=(ev)=>{ $('prompt').value=ev.results[0][0].transcript; sendText(); voiceRec=null; };
+  voiceRec.onerror=()=>{ voiceRec=null; };
+  voiceRec.onend=()=>{ voiceRec=null; };
+  voiceRec.start(); addMsg('ai','گوش می‌دهم...');
+}
+
+(async function boot(){
+  try{
+    const saved=localStorage.getItem('lumera_ai_user');
+    if(saved){
+      sessionUser=JSON.parse(saved);
+      if(!sessionUser.displayName && sessionUser.email) sessionUser.displayName = nameFromEmail(sessionUser.email);
+      isOwner = isOwnerEmail(sessionUser.email);
+      sessionUser.owner = isOwner;
+      await enterApp();
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
