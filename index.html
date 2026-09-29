@@ -10,63 +10,47 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
-:root, [data-theme="space"]{
-  --bg:#050814; --card:rgba(15,23,42,.72); --line:rgba(148,163,184,.2);
-  --text:#e8eefc; --muted:#94a3b8; --a:#22d3ee; --b:#a78bfa;
-}
+:root, [data-theme="space"]{ --bg:#050814; --card:rgba(15,23,42,.72); --line:rgba(148,163,184,.2); --text:#e8eefc; --muted:#94a3b8; --a:#22d3ee; --b:#a78bfa; }
 [data-theme="dark"]{ --bg:#0a0a0a; --card:rgba(24,24,24,.82); --line:rgba(255,255,255,.12); --text:#f5f5f5; --muted:#a3a3a3; --a:#60a5fa; --b:#818cf8; }
 [data-theme="light"]{ --bg:#f1f5f9; --card:rgba(255,255,255,.85); --line:rgba(15,23,42,.12); --text:#0f172a; --muted:#64748b; --a:#0891b2; --b:#7c3aed; }
-[data-theme="sunset"]{ --bg:#1a0b0b; --card:rgba(40,15,15,.8); --line:rgba(251,146,60,.2); --text:#fff7ed; --muted:#fdba74; --a:#fb923c; --b:#f43f5e; }
-[data-theme="ocean"]{ --bg:#021526; --card:rgba(3,40,60,.8); --line:rgba(34,211,238,.22); --text:#e0f7ff; --muted:#7dd3fc; --a:#06b6d4; --b:#3b82f6; }
-[data-theme="neon"]{ --bg:#0a0014; --card:rgba(30,0,50,.82); --line:rgba(236,72,153,.25); --text:#fdf4ff; --muted:#e879f9; --a:#f472b6; --b:#22d3ee; }
-
 *{box-sizing:border-box}
 body{ margin:0; min-height:100dvh; font-family:Vazirmatn,system-ui,sans-serif; color:var(--text); background:var(--bg); position:relative; }
 body::before{ content:''; position:fixed; inset:0; z-index:-2; background-image:url('bg.png'); background-size:cover; background-position:center; background-attachment:fixed; opacity:.55; pointer-events:none; }
 body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-gradient(circle at 50% 50%, transparent 0%, var(--bg) 85%); opacity:.7; pointer-events:none; }
-
 .glass{background:var(--card);border:1px solid var(--line);border-radius:20px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .btn{border:0;border-radius:14px;padding:.8rem 1rem;font-weight:700;cursor:pointer;color:var(--text);transition:all .2s}
 .btn:hover{transform:translateY(-1px)}
 .btn-primary{background:linear-gradient(135deg,var(--a),var(--b));color:#041018}
 .btn-ghost{background:color-mix(in srgb,var(--text) 8%, transparent)}
-.btn-gold{background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);color:#1c1917;box-shadow:0 4px 20px rgba(251,191,36,.4);position:relative;overflow:hidden;font-weight:800}
+.btn-gold{background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);color:#1c1917;box-shadow:0 4px 20px rgba(251,191,36,.4);font-weight:900}
 .input{width:100%;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 60%, transparent);color:var(--text);padding:.85rem 1rem;outline:none;font-family:inherit}
 .msg-user{background:color-mix(in srgb,var(--a) 25%, transparent)}
 .msg-ai{background:color-mix(in srgb,var(--bg) 75%, transparent);border:1px solid var(--line)}
 .badge{font-size:11px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--a) 20%,transparent);color:var(--a)}
 .badge.owner{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1917}
-.badge.plus{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1917}
 .hidden{display:none!important}
-.modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
-.modal.open{display:flex}
-.modal-content{background:var(--card);border:1px solid var(--line);border-radius:20px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;padding:24px}
+#settings-modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px}
+#settings-modal.open{display:flex}
 #fab{position:fixed;bottom:20px;left:20px;z-index:90;border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,var(--a),var(--b));color:#041018;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .err{color:#fca5a5;font-size:12px;min-height:18px}
 .ok{color:#6ee7b7;font-size:12px}
-
 #intro{position:fixed;inset:0;z-index:9999;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .8s ease;pointer-events:none}
 #intro.show{display:flex;opacity:1;pointer-events:all}
 #intro.hide{opacity:0}
-#intro-text{font-family:'Orbitron',sans-serif;font-size:clamp(28px, 6vw, 72px);font-weight:900;letter-spacing:.08em;background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:scale(.85);transition:opacity 1s ease, transform 1s ease;text-align:center;padding:0 20px}
+#intro-text{font-family:'Orbitron',sans-serif;font-size:clamp(28px,6vw,72px);font-weight:900;letter-spacing:.08em;background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:scale(.85);transition:opacity 1s ease,transform 1s ease;text-align:center;padding:0 20px}
 #intro-text.show{opacity:1;transform:scale(1)}
-#intro-sub{font-family:'Orbitron',sans-serif;font-size:clamp(10px, 1.6vw, 16px);color:#94a3b8;letter-spacing:.4em;margin-top:20px;opacity:0;transition:opacity 1s ease .3s;text-align:center}
+#intro-sub{font-family:'Orbitron',sans-serif;font-size:clamp(10px,1.6vw,16px);color:#94a3b8;letter-spacing:.4em;margin-top:20px;opacity:0;transition:opacity 1s ease .3s;text-align:center}
 #intro-text.show + #intro-sub{opacity:1}
-#usage-bar{position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:80;pointer-events:none}
-#usage-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--b));transition:width .5s ease;width:0%}
+#usage-bar{position:fixed;top:0;left:0;right:0;height:4px;background:transparent;z-index:80;pointer-events:none}
+#usage-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--b));transition:width .5s}
+#plus-modal,#blocked-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px}
+#plus-modal.open,#blocked-modal.open{display:flex}
 </style>
 </head>
 <body data-theme="space">
-
 <div id="usage-bar"><div id="usage-fill"></div></div>
 
-<div id="intro">
-  <div style="text-align:center">
-    <div id="intro-text">Lumera Studio</div>
-    <div id="intro-sub">L U M E R A &nbsp; S T U D I O</div>
-  </div>
-</div>
+<div id="intro"><div style="text-align:center"><div id="intro-text">Lumera Studio</div><div id="intro-sub">L U M E R A &nbsp; S T U D I O</div></div></div>
 
 <button id="fab" type="button" onclick="openSettings()">تنظیمات</button>
 
@@ -116,81 +100,72 @@ body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-
   </div>
 </div>
 
-<div id="settings-modal" class="modal" onclick="if(event.target===this)closeSettings()">
-  <div class="modal-content" onclick="event.stopPropagation()">
-    <h2 class="font-bold text-lg mb-3">تنظیمات</h2>
-    <div class="space-y-3">
-      <div>
-        <p class="text-xs mb-2" style="color:var(--muted)">تم</p>
-        <div class="grid grid-cols-2 gap-2">
-          <button class="btn btn-ghost text-xs" onclick="setTheme('space')">فضایی</button>
-          <button class="btn btn-ghost text-xs" onclick="setTheme('dark')">تاریک</button>
-          <button class="btn btn-ghost text-xs" onclick="setTheme('light')">روشن</button>
-          <button class="btn btn-ghost text-xs" onclick="setTheme('sunset')">غروب</button>
-          <button class="btn btn-ghost text-xs" onclick="setTheme('ocean')">اقیانوس</button>
-          <button class="btn btn-ghost text-xs" onclick="setTheme('neon')">نئون</button>
-        </div>
+<div id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="glass w-full max-w-md p-5 space-y-3" onclick="event.stopPropagation()">
+    <h2 class="font-bold text-lg">تنظیمات</h2>
+    <div>
+      <p class="text-xs mb-2" style="color:var(--muted)">تم</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="btn btn-ghost text-xs" onclick="setTheme('space')">فضایی</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('dark')">تاریک</button>
+        <button class="btn btn-ghost text-xs" onclick="setTheme('light')">روشن</button>
       </div>
-      <div id="owner-key-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
-        <p class="text-xs font-bold">👑 فقط مالک · OpenAI API Key</p>
-        <input id="openai-key" class="input" type="password" placeholder="sk-..."/>
-        <button class="btn btn-primary w-full text-sm" onclick="saveOwnerKey()">ذخیره کلید</button>
-      </div>
-      <div id="owner-discount-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
-        <p class="text-xs font-bold">👑 فقط مالک · کد تخفیف</p>
-        <input id="discount-code" class="input" placeholder="مثلاً LUMERA50"/>
-        <input id="discount-percent" class="input" type="number" placeholder="درصد (مثلاً 50)" min="1" max="100"/>
-        <input id="discount-uses" class="input" type="number" placeholder="حداکثر استفاده (100)" value="100"/>
-        <button class="btn btn-primary w-full text-sm" onclick="createDiscount()">ساخت کد تخفیف</button>
-        <div id="discount-list" class="text-xs space-y-1" style="color:var(--muted)"></div>
-      </div>
-      <div id="owner-plan-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
-        <p class="text-xs font-bold">👑 فقط مالک · مدیریت Plus</p>
-        <input id="plan-user-email" class="input" placeholder="ایمیل کاربر"/>
-        <select id="plan-user-type" class="input">
-          <option value="plus">Plus (ماهانه)</option>
-          <option value="plus_year">Plus (سالانه)</option>
-          <option value="free">Free</option>
-          <option value="owner">Owner</option>
-        </select>
-        <button class="btn btn-primary w-full text-sm" onclick="setUserPlan()">اعمال</button>
-      </div>
-      <button class="btn btn-ghost w-full" onclick="closeSettings()">بستن</button>
     </div>
+    <div id="owner-key-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
+      <p class="text-xs font-bold">👑 فقط مالک · OpenAI API Key</p>
+      <input id="openai-key" class="input" type="password" placeholder="sk-..."/>
+      <button class="btn btn-primary w-full text-sm" onclick="saveOwnerKey()">ذخیره کلید</button>
+    </div>
+    <div id="owner-discount-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
+      <p class="text-xs font-bold">👑 فقط مالک · کد تخفیف</p>
+      <input id="discount-code" class="input" placeholder="LUMERA50"/>
+      <input id="discount-percent" class="input" type="number" placeholder="درصد" min="1" max="100"/>
+      <button class="btn btn-primary w-full text-sm" onclick="createDiscount()">ساخت کد</button>
+      <div id="discount-list" class="text-xs space-y-1" style="color:var(--muted)"></div>
+    </div>
+    <div id="owner-plan-box" class="hidden space-y-2 pt-2" style="border-top:1px solid var(--line)">
+      <p class="text-xs font-bold">👑 فقط مالک · مدیریت Plus</p>
+      <input id="plan-user-email" class="input" placeholder="ایمیل کاربر"/>
+      <select id="plan-user-type" class="input">
+        <option value="plus">Plus ماهانه</option>
+        <option value="free">Free</option>
+      </select>
+      <button class="btn btn-primary w-full text-sm" onclick="setUserPlan()">اعمال</button>
+    </div>
+    <button class="btn btn-ghost w-full" onclick="closeSettings()">بستن</button>
   </div>
 </div>
 
-<div id="plus-modal" class="modal" onclick="if(event.target===this)closePlusModal()">
-  <div class="modal-content" onclick="event.stopPropagation()">
+<div id="plus-modal">
+  <div class="glass w-full max-w-md p-6" style="max-height:90vh;overflow-y:auto">
     <div class="text-center mb-4">
-      <div class="text-3xl mb-2">⚡</div>
+      <div class="text-4xl mb-2">⚡</div>
       <h2 class="font-extrabold text-2xl" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;color:transparent">Lumera Plus</h2>
-      <p class="text-xs mt-1" style="color:var(--muted)">تجربه بی‌محدود هوش مصنوعی</p>
+      <p class="text-xs mt-1" style="color:var(--muted)">تجربه بی‌محدود</p>
     </div>
-    <div class="glass p-4 mb-3 text-center">
+    <div class="glass p-4 mb-4 text-center">
       <div class="text-3xl font-extrabold" style="color:#fbbf24">۳۰۰,۰۰۰</div>
       <div class="text-xs" style="color:var(--muted)">تومان / ماهانه</div>
     </div>
     <div class="space-y-2 text-sm mb-4">
-      <div>✓ بدون محدودیت کلمه</div>
-      <div>✓ همه مدل‌های AI</div>
-      <div>✓ تولید تصویر نامحدود</div>
-      <div>✓ تولید ویدیو</div>
-      <div>✓ کلون صوتی</div>
-      <div>✓ پشتیبانی ۲۴/۷</div>
+      <div>✅ بدون محدودیت کلمه</div>
+      <div>✅ همه مدل‌های AI</div>
+      <div>✅ تولید تصویر نامحدود</div>
+      <div>✅ کلون صوتی</div>
+      <div>✅ پشتیبانی ۲۴/۷</div>
     </div>
     <input id="plus-discount" class="input mb-2" placeholder="کد تخفیف (اختیاری)" oninput="applyDiscount()"/>
     <p id="plus-price-hint" class="text-xs mb-3" style="color:var(--muted);min-height:18px"></p>
-    <button class="btn btn-gold w-full mb-2" onclick="requestPlus()">💳 پرداخت و فعال‌سازی</button>
+    <button class="btn btn-gold w-full mb-2" onclick="requestPlus()">💳 پرداخت</button>
     <button class="btn btn-ghost w-full" onclick="closePlusModal()">بستن</button>
   </div>
 </div>
 
-<div id="blocked-modal" class="modal">
-  <div class="modal-content text-center">
+<div id="blocked-modal">
+  <div class="glass w-full max-w-sm p-6 text-center">
     <div class="text-5xl mb-3">⏳</div>
     <h2 class="font-bold text-xl mb-2">محدودیت موقت</h2>
-    <p class="text-sm mb-3" style="color:var(--muted)">به سقف ۱۰۰۰ کلمه در ۵ ساعت رسیدی</p>
+    <p class="text-sm mb-3" style="color:var(--muted)">۱۰۰۰ کلمه در ۵ ساعت مصرف شد</p>
     <div id="blocked-timer" class="text-2xl font-bold mb-4" style="color:#fbbf24">--:--:--</div>
     <button class="btn btn-gold w-full mb-2" onclick="closeBlockedModal();openPlusModal()">⚡ ارتقا به Plus</button>
     <button class="btn btn-ghost w-full" onclick="closeBlockedModal()">بستن</button>
@@ -201,7 +176,7 @@ body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-
 const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_DALm5PHLFNf8pf7q7Pl3Mg_KZPnwKAJ';
 const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
-const SYSTEM = 'You are Lumera AI. Year is 2026. Reply in the user language (often Persian). Be natural and concise.';
+const SYSTEM = 'You are Lumera AI. Year is 2026. Reply in Persian. Be natural and concise.';
 const FREE_LIMIT = 1000;
 const PLUS_PRICE = 300000;
 const RESET_HOURS = 5;
@@ -226,18 +201,15 @@ function countWords(t){ return String(t||'').trim().split(/\s+/).filter(Boolean)
 function emailBotCheck(raw){
   const email = normEmail(raw);
   if(!email) return { ok:false, msg:'ایمیل را وارد کن' };
-  if(email.length > 254) return { ok:false, msg:'ایمیل خیلی بلند' };
+  if(email.length > 254) return { ok:false, msg:'ایمیل بلند' };
   if(email.indexOf(' ') >= 0) return { ok:false, msg:'فاصله مجاز نیست' };
   const re = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/i;
   if(!re.test(email)) return { ok:false, msg:'ایمیل واقعی وارد کن' };
   const parts = email.split('@');
   if(parts.length !== 2) return { ok:false, msg:'فرمت اشتباه' };
   const local = parts[0], domain = parts[1];
-  if(!local || local.length < 1) return { ok:false, msg:'قبل از @ خالیه' };
-  if(local.startsWith('.') || local.endsWith('.') || local.includes('..')) return { ok:false, msg:'نقطه‌گذاری اشتباه' };
+  if(!local) return { ok:false, msg:'قبل از @ خالیه' };
   if(!domain.includes('.')) return { ok:false, msg:'دامنه ناقص' };
-  const tld = domain.split('.').pop();
-  if(!tld || tld.length < 2) return { ok:false, msg:'پسوند کوتاه' };
   if(FAKE_DOMAINS.some(d => domain === d || domain.endsWith('.'+d))) return { ok:false, msg:'ایمیل موقت قبول نیست' };
   return { ok:true, msg:'ایمیل معتبر ✓', email };
 }
@@ -255,7 +227,7 @@ function nameFromEmail(email){
   const local = normEmail(email).split('@')[0] || 'کاربر';
   let parts = local.split(/[._\-+]+/).filter(Boolean);
   if(!parts.length) parts = [local];
-  const map = { amir:'امیر', ali:'علی', hesam:'حسام', reza:'رضا', mohammad:'محمد', mahdi:'مهدی', mehdi:'مهدی', sara:'سارا', zahra:'زهرا', maryam:'مریم', nima:'نیما', pouya:'پویا', milad:'میلاد', sina:'سینا' };
+  const map = { amir:'امیر', ali:'علی', hesam:'حسام', reza:'رضا', mohammad:'محمد', mahdi:'مهدی', sara:'سارا', zahra:'زهرا', maryam:'مریم', nima:'نیما', sina:'سینا' };
   return parts.map(p => {
     const k = p.toLowerCase().replace(/\d+/g,'');
     if(map[k]) return map[k];
@@ -264,22 +236,15 @@ function nameFromEmail(email){
   }).join(' ');
 }
 
-function setTheme(name){
-  document.body.setAttribute('data-theme', name);
-  localStorage.setItem('lumera_ai_theme', name);
-}
+function setTheme(name){ document.body.setAttribute('data-theme', name); localStorage.setItem('lumera_ai_theme', name); }
 (function(){ const t=localStorage.getItem('lumera_ai_theme'); if(t) setTheme(t); })();
 
 function openSettings(){
   $('settings-modal').classList.add('open');
-  const own = isOwner;
-  $('owner-key-box').classList.toggle('hidden', !own);
-  $('owner-discount-box').classList.toggle('hidden', !own);
-  $('owner-plan-box').classList.toggle('hidden', !own);
-  if(own){
-    $('openai-key').value = '';
-    loadDiscountList();
-  }
+  $('owner-key-box').classList.toggle('hidden', !isOwner);
+  $('owner-discount-box').classList.toggle('hidden', !isOwner);
+  $('owner-plan-box').classList.toggle('hidden', !isOwner);
+  if(isOwner){ $('openai-key').value=''; loadDiscountList(); }
 }
 function closeSettings(){ $('settings-modal').classList.remove('open'); }
 function openPlusModal(){ $('plus-modal').classList.add('open'); }
@@ -291,17 +256,17 @@ function updateUsageUI(){
   const st = $('status-text');
   const sw = $('status-words');
   const pb = $('plus-btn');
-  if(isPremium || isOwner){
+  if(isPremium){
     fill.style.width = '100%';
     fill.style.background = 'linear-gradient(90deg,#fbbf24,#f59e0b)';
     st.textContent = '⚡ Plus فعال';
     sw.textContent = 'بدون محدودیت';
-    pb.classList.add('hidden');
+    pb.style.display = 'none';
     return;
   }
-  pb.classList.remove('hidden');
+  pb.style.display = '';
   const used = planData ? (planData.words_used || 0) : 0;
-  const pct = Math.min(100, (used / FREE_LIMIT) * 100);
+  const pct = Math.min(100, (used/FREE_LIMIT)*100);
   fill.style.width = pct + '%';
   fill.style.background = pct > 80 ? 'linear-gradient(90deg,#f43f5e,#dc2626)' : (pct > 50 ? 'linear-gradient(90deg,#fbbf24,#f59e0b)' : 'linear-gradient(90deg,#22d3ee,#a78bfa)');
   st.textContent = 'وضعیت: رایگان';
@@ -312,17 +277,15 @@ async function loadPlan(email){
   try{
     const { data } = await sb.from('lumera_plans').select('*').eq('email', email).maybeSingle();
     if(!data){
-      await sb.from('lumera_plans').insert({ email: email, plan:'free', words_reset_at: new Date().toISOString() });
-      return { plan:'free', words_used:0, words_reset_at: new Date().toISOString(), blocked_until: null };
+      await sb.from('lumera_plans').insert({ email, plan:'free', words_reset_at: new Date().toISOString() });
+      return { plan:'free', words_used:0, words_reset_at:new Date().toISOString(), blocked_until:null };
     }
     if(data.plan_expires_at && new Date(data.plan_expires_at) < new Date() && data.plan !== 'owner'){
       await sb.from('lumera_plans').update({ plan:'free' }).eq('email', email);
       data.plan = 'free';
     }
     return data;
-  }catch(e){
-    return { plan:'free', words_used:0, words_reset_at: new Date().toISOString(), blocked_until: null };
-  }
+  }catch(e){ return { plan:'free', words_used:0, words_reset_at:new Date().toISOString(), blocked_until:null }; }
 }
 
 async function resetIfNeeded(email, pd){
@@ -331,26 +294,20 @@ async function resetIfNeeded(email, pd){
   const resetAt = new Date(pd.words_reset_at || now);
   const hoursPassed = (now - resetAt) / (1000*60*60);
   if(hoursPassed >= RESET_HOURS){
-    await sb.from('lumera_plans').update({ words_used:0, words_reset_at: now.toISOString(), blocked_until: null }).eq('email', email);
-    pd.words_used = 0;
-    pd.words_reset_at = now.toISOString();
-    pd.blocked_until = null;
+    await sb.from('lumera_plans').update({ words_used:0, words_reset_at: now.toISOString(), blocked_until:null }).eq('email', email);
+    pd.words_used = 0; pd.words_reset_at = now.toISOString(); pd.blocked_until = null;
   }
   return pd;
 }
 
 async function addWords(email, count){
-  if(isPremium) return;
-  if(!planData) return;
+  if(isPremium || !planData) return;
   const newUsed = (planData.words_used || 0) + count;
   const newTotal = (planData.total_words_lifetime || 0) + count;
   const update = { words_used:newUsed, total_words_lifetime:newTotal, updated_at: new Date().toISOString() };
-  if(newUsed >= FREE_LIMIT){
-    update.blocked_until = new Date(Date.now() + RESET_HOURS*60*60*1000).toISOString();
-  }
+  if(newUsed >= FREE_LIMIT) update.blocked_until = new Date(Date.now() + RESET_HOURS*60*60*1000).toISOString();
   await sb.from('lumera_plans').update(update).eq('email', email);
-  planData.words_used = newUsed;
-  planData.total_words_lifetime = newTotal;
+  planData.words_used = newUsed; planData.total_words_lifetime = newTotal;
   if(update.blocked_until) planData.blocked_until = update.blocked_until;
   updateUsageUI();
 }
@@ -360,12 +317,7 @@ function startBlockedTimer(){
   function tick(){
     if(!planData || !planData.blocked_until) return;
     const left = new Date(planData.blocked_until) - new Date();
-    if(left <= 0){
-      clearInterval(blockedTimer);
-      closeBlockedModal();
-      if(sessionUser) resetIfNeeded(sessionUser.email, planData);
-      return;
-    }
+    if(left <= 0){ clearInterval(blockedTimer); closeBlockedModal(); if(sessionUser) resetIfNeeded(sessionUser.email, planData); return; }
     const h = Math.floor(left/3600000);
     const m = Math.floor((left%3600000)/60000);
     const s = Math.floor((left%60000)/1000);
@@ -375,10 +327,7 @@ function startBlockedTimer(){
   blockedTimer = setInterval(tick, 1000);
 }
 
-function showBlocked(){
-  $('blocked-modal').classList.add('open');
-  startBlockedTimer();
-}
+function showBlocked(){ $('blocked-modal').classList.add('open'); startBlockedTimer(); }
 
 async function initPlan(email){
   isOwner = isOwnerEmail(email);
@@ -390,9 +339,7 @@ async function initPlan(email){
   } else {
     planData = await resetIfNeeded(email, planData);
     isPremium = false;
-    if(planData.blocked_until && new Date(planData.blocked_until) > new Date()){
-      showBlocked();
-    }
+    if(planData.blocked_until && new Date(planData.blocked_until) > new Date()) showBlocked();
   }
   updateUsageUI();
 }
@@ -400,10 +347,8 @@ async function initPlan(email){
 async function loadOpenAIKey(){
   cachedOpenAIKey = '';
   try{
-    const { data } = await sb.from('lumera_ai_config').select('openai_key').eq('id', 1).maybeSingle();
-    if(data && data.openai_key && String(data.openai_key).length > 20){
-      cachedOpenAIKey = String(data.openai_key).replace(/\s+/g,'');
-    }
+    const { data } = await sb.from('lumera_ai_config').select('openai_key').eq('id',1).maybeSingle();
+    if(data && data.openai_key && String(data.openai_key).length > 20) cachedOpenAIKey = String(data.openai_key).replace(/\s+/g,'');
   }catch(e){}
   if(!cachedOpenAIKey){
     const local = localStorage.getItem('lumera_openai_key');
@@ -419,10 +364,8 @@ async function saveOwnerKey(){
   key = key.replace(/\s+/g,'');
   cachedOpenAIKey = key;
   localStorage.setItem('lumera_openai_key', key);
-  try{
-    await sb.from('lumera_ai_config').upsert({ id:1, openai_key:key, updated_at:new Date().toISOString() });
-    alert('کلید ذخیره شد');
-  }catch(e){ alert('روی این دستگاه ذخیره شد'); }
+  try{ await sb.from('lumera_ai_config').upsert({ id:1, openai_key:key, updated_at:new Date().toISOString() }); alert('ذخیره شد'); }
+  catch(e){ alert('روی دستگاه ذخیره شد'); }
   closeSettings();
 }
 
@@ -430,11 +373,10 @@ async function createDiscount(){
   if(!isOwner) return;
   const code = ($('discount-code').value || '').trim().toUpperCase();
   const percent = parseInt($('discount-percent').value || '0');
-  const uses = parseInt($('discount-uses').value || '100');
-  if(!code || !percent || percent < 1 || percent > 100){ alert('کد و درصد درست وارد کن'); return; }
+  if(!code || !percent){ alert('کد و درصد وارد کن'); return; }
   try{
-    await sb.from('lumera_discounts').upsert({ code, percent, max_uses:uses, used_count:0, created_by:sessionUser.email, created_at:new Date().toISOString() });
-    alert('کد تخفیف ساخته شد: ' + code + ' (' + percent + '%)');
+    await sb.from('lumera_discounts').upsert({ code, percent, max_uses:100, used_count:0, created_by:sessionUser.email, created_at:new Date().toISOString() });
+    alert('کد ساخته شد: ' + code);
     $('discount-code').value=''; $('discount-percent').value='';
     loadDiscountList();
   }catch(e){ alert('خطا: ' + e.message); }
@@ -453,14 +395,12 @@ async function setUserPlan(){
   if(!isOwner) return;
   const email = normEmail($('plan-user-email').value);
   const type = $('plan-user-type').value;
-  if(!email){ alert('ایمیل را وارد کن'); return; }
+  if(!email){ alert('ایمیل وارد کن'); return; }
   let expires = null;
   if(type === 'plus') expires = new Date(Date.now() + 30*24*60*60*1000).toISOString();
-  if(type === 'plus_year') expires = new Date(Date.now() + 365*24*60*60*1000).toISOString();
-  if(type === 'owner') expires = '2099-12-31T00:00:00Z';
   try{
     await sb.from('lumera_plans').upsert({ email, plan:type, plan_expires_at:expires, updated_at:new Date().toISOString() }, { onConflict:'email' });
-    alert('کاربر ' + email + ' → ' + type);
+    alert('انجام شد: ' + email + ' → ' + type);
   }catch(e){ alert('خطا: ' + e.message); }
 }
 
@@ -473,9 +413,9 @@ async function applyDiscount(){
     if(!data){ hint.textContent = '❌ کد معتبر نیست'; hint.style.color = '#fca5a5'; return; }
     if(data.used_count >= data.max_uses){ hint.textContent = '❌ منقضی شده'; hint.style.color = '#fca5a5'; return; }
     const final = Math.round(PLUS_PRICE * (100 - data.percent) / 100);
-    hint.textContent = '✓ تخفیف ' + data.percent + '% — قیمت نهایی: ' + final.toLocaleString('fa-IR') + ' تومان';
+    hint.textContent = '✓ ' + data.percent + '% — ' + final.toLocaleString('fa-IR') + ' تومان';
     hint.style.color = '#6ee7b7';
-  }catch(e){ hint.textContent = ''; }
+  }catch(e){}
 }
 
 async function requestPlus(){
@@ -486,14 +426,11 @@ async function requestPlus(){
       const { data } = await sb.from('lumera_discounts').select('*').eq('code', code).maybeSingle();
       if(data && data.used_count < data.max_uses){
         final = Math.round(PLUS_PRICE * (100 - data.percent) / 100);
-        await sb.from('lumera_discounts').update({ used_count: (data.used_count||0)+1 }).eq('code', code);
+        await sb.from('lumera_discounts').update({ used_count:(data.used_count||0)+1 }).eq('code', code);
       }
     }
-    await sb.from('lumera_plus_requests').insert({
-      email: sessionUser.email, discount_code: code || null,
-      original_price: PLUS_PRICE, final_price: final, status:'pending'
-    });
-    alert('درخواست ثبت شد! قیمت نهایی: ' + final.toLocaleString('fa-IR') + ' تومان\nبه‌زودی با شما تماس می‌گیریم.');
+    await sb.from('lumera_plus_requests').insert({ email:sessionUser.email, discount_code:code||null, original_price:PLUS_PRICE, final_price:final, status:'pending' });
+    alert('ثبت شد! قیمت: ' + final.toLocaleString('fa-IR') + ' تومان');
     closePlusModal();
   }catch(e){ alert('خطا: ' + e.message); }
 }
@@ -506,11 +443,7 @@ function playIntro(){
     txt.classList.remove('show');
     setTimeout(()=> txt.classList.add('show'), 100);
     setTimeout(()=> intro.classList.add('hide'), 2200);
-    setTimeout(()=>{
-      intro.classList.remove('show','hide');
-      txt.classList.remove('show');
-      resolve();
-    }, 3200);
+    setTimeout(()=>{ intro.classList.remove('show','hide'); txt.classList.remove('show'); resolve(); }, 3200);
   });
 }
 
@@ -523,9 +456,7 @@ async function startAuth(){
   sessionUser = { email, displayName, owner: isOwnerEmail(email) };
   isOwner = sessionUser.owner;
   localStorage.setItem('lumera_ai_user', JSON.stringify(sessionUser));
-  try{
-    await sb.from('lumera_users').upsert({ email, display_name:displayName, is_owner:isOwner, last_seen:new Date().toISOString() }, { onConflict:'email' });
-  }catch(e){}
+  try{ await sb.from('lumera_users').upsert({ email, display_name:displayName, is_owner:isOwner, last_seen:new Date().toISOString() }, { onConflict:'email' }); }catch(e){}
   await playIntro();
   await enterApp();
 }
@@ -544,15 +475,11 @@ async function enterApp(){
   await initPlan(sessionUser.email);
   if(!$('chat').dataset.ready){
     $('chat').dataset.ready='1';
-    const n = sessionUser.displayName;
-    addMsg('ai', 'سلام '+n+'! من Lumera AI هستم.\nمتن بفرست، با ویس حرف بزن، یا تصویر بساز.');
+    addMsg('ai', 'سلام ' + sessionUser.displayName + '! من Lumera AI هستم.');
   }
 }
 
-function logout(){
-  localStorage.removeItem('lumera_ai_user');
-  location.reload();
-}
+function logout(){ localStorage.removeItem('lumera_ai_user'); location.reload(); }
 
 function addMsg(role, text, extraHtml){
   const div=document.createElement('div');
@@ -570,12 +497,9 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','
 async function callChat(text){
   if(!cachedOpenAIKey) await loadOpenAIKey();
   const name = sessionUser.displayName || 'کاربر';
-  const messages = [
-    {role:'system', content: SYSTEM + ' The user prefers to be called: ' + name },
-    {role:'user', content: text}
-  ];
+  const messages = [{role:'system',content:SYSTEM+' User: '+name},{role:'user',content:text}];
   try{
-    const { data, error } = await sb.functions.invoke('chat', { body: { message:text, userName:name, isOwner, messages } });
+    const { data, error } = await sb.functions.invoke('chat', { body:{message:text,userName:name,isOwner,messages} });
     if(!error && data){
       if(data.reply) return data.reply;
       if(data.choices && data.choices[0] && data.choices[0].message) return data.choices[0].message.content;
@@ -583,36 +507,27 @@ async function callChat(text){
   }catch(e){}
   if(cachedOpenAIKey){
     try{
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+cachedOpenAIKey},
-        body: JSON.stringify({ model:'gpt-4o-mini', messages })
-      });
+      const res = await fetch('https://api.openai.com/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+cachedOpenAIKey}, body:JSON.stringify({model:'gpt-4o-mini',messages}) });
       const data = await res.json();
       if(res.ok && data.choices && data.choices[0]) return data.choices[0].message.content;
     }catch(e){}
   }
   try{
-    const pr = await fetch('https://text.pollinations.ai/', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages, model:'openai' })
-    });
+    const pr = await fetch('https://text.pollinations.ai/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages,model:'openai'}) });
     if(pr.ok){ const t = await pr.text(); if(t && t.trim()) return t.trim(); }
   }catch(e){}
-  return 'الان به سرویس AI وصل نشدم.';
+  return 'الان وصل نشدم.';
 }
 
 async function callImage(prompt){
   if(!cachedOpenAIKey) await loadOpenAIKey();
   try{
-    const { data, error } = await sb.functions.invoke('chat', { body: { type:'image', prompt } });
+    const { data, error } = await sb.functions.invoke('chat', { body:{type:'image',prompt} });
     if(!error && data && data.data && data.data[0] && data.data[0].url) return data.data[0].url;
   }catch(e){}
   if(cachedOpenAIKey){
     try{
-      const res = await fetch('https://api.openai.com/v1/images/generations', {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+cachedOpenAIKey},
-        body: JSON.stringify({ model:'dall-e-3', prompt, size:'1024x1024', n:1 })
-      });
+      const res = await fetch('https://api.openai.com/v1/images/generations', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+cachedOpenAIKey}, body:JSON.stringify({model:'dall-e-3',prompt,size:'1024x1024',n:1}) });
       const data = await res.json();
       if(res.ok && data.data && data.data[0]) return data.data[0].url;
     }catch(e){}
@@ -636,7 +551,6 @@ async function sendText(){
     const nodes = $('chat').querySelectorAll('.msg-ai');
     if(nodes.length) nodes[nodes.length-1].parentElement.remove();
     addMsg('ai', ans);
-    speak(ans);
     if(!isPremium && sessionUser) await addWords(sessionUser.email, countWords(t));
   }catch(e){
     const nodes = $('chat').querySelectorAll('.msg-ai');
@@ -665,7 +579,6 @@ async function sendImage(){
 }
 
 function clearChat(){ $('chat').innerHTML=''; $('chat').dataset.ready=''; enterApp(); }
-function speak(text){ try{ if(!window.speechSynthesis) return; const u = new SpeechSynthesisUtterance(String(text).slice(0,400)); u.lang='fa-IR'; speechSynthesis.speak(u); }catch(e){} }
 function toggleVoice(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ addMsg('ai','ویس پشتیبانی نمی‌شود'); return; }
@@ -679,12 +592,8 @@ function toggleVoice(){
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  const promptEl = $('prompt');
-  if(promptEl){
-    promptEl.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendText(); }
-    });
-  }
+  const p = $('prompt');
+  if(p) p.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
 });
 
 (function boot(){
@@ -697,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function(){
       sessionUser.owner = isOwner;
       enterApp();
     }
-  }catch(e){ console.log(e); }
+  }catch(e){}
 })();
 </script>
 </body>
