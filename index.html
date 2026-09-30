@@ -7,47 +7,10 @@
 <title>Lumera AI</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-:root, [data-theme="space"]{ --bg:#050814; --card:rgba(15,23,42,.72); --line:rgba(148,163,184,.2); --text:#e8eefc; --muted:#94a3b8; --a:#22d3ee; --b:#a78bfa; }
-[data-theme="dark"]{ --bg:#0a0a0a; --card:rgba(24,24,24,.82); --line:rgba(255,255,255,.12); --text:#f5f5f5; --muted:#a3a3a3; --a:#60a5fa; --b:#818cf8; }
-[data-theme="light"]{ --bg:#f1f5f9; --card:rgba(255,255,255,.85); --line:rgba(15,23,42,.12); --text:#0f172a; --muted:#64748b; --a:#0891b2; --b:#7c3aed; }
-*{box-sizing:border-box}
-body{ margin:0; min-height:100dvh; font-family:Vazirmatn,system-ui,sans-serif; color:var(--text); background:var(--bg); position:relative; }
-body::before{ content:''; position:fixed; inset:0; z-index:-2; background-image:url('bg.png'); background-size:cover; background-position:center; background-attachment:fixed; opacity:.55; pointer-events:none; }
-body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-gradient(circle at 50% 50%, transparent 0%, var(--bg) 85%); opacity:.7; pointer-events:none; }
-.glass{background:var(--card);border:1px solid var(--line);border-radius:20px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-.btn{border:0;border-radius:14px;padding:.8rem 1rem;font-weight:700;cursor:pointer;color:var(--text);transition:all .2s}
-.btn:hover{transform:translateY(-1px)}
-.btn-primary{background:linear-gradient(135deg,var(--a),var(--b));color:#041018}
-.btn-ghost{background:color-mix(in srgb,var(--text) 8%, transparent)}
-.btn-gold{background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);color:#1c1917;box-shadow:0 4px 20px rgba(251,191,36,.4);font-weight:900}
-.input{width:100%;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 60%, transparent);color:var(--text);padding:.85rem 1rem;outline:none;font-family:inherit}
-.msg-user{background:color-mix(in srgb,var(--a) 25%, transparent)}
-.msg-ai{background:color-mix(in srgb,var(--bg) 75%, transparent);border:1px solid var(--line)}
-.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--a) 20%,transparent);color:var(--a)}
-.badge.owner{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1917}
-.hidden{display:none!important}
-#settings-modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px}
-#settings-modal.open{display:flex}
-#fab{position:fixed;bottom:20px;left:20px;z-index:90;border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,var(--a),var(--b));color:#041018;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.err{color:#fca5a5;font-size:12px;min-height:18px}
-.ok{color:#6ee7b7;font-size:12px}
-#intro{position:fixed;inset:0;z-index:9999;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .8s ease;pointer-events:none}
-#intro.show{display:flex;opacity:1;pointer-events:all}
-#intro.hide{opacity:0}
-#intro-text{font-family:'Orbitron',sans-serif;font-size:clamp(28px,6vw,72px);font-weight:900;letter-spacing:.08em;background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:scale(.85);transition:opacity 1s ease,transform 1s ease;text-align:center;padding:0 20px}
-#intro-text.show{opacity:1;transform:scale(1)}
-#intro-sub{font-family:'Orbitron',sans-serif;font-size:clamp(10px,1.6vw,16px);color:#94a3b8;letter-spacing:.4em;margin-top:20px;opacity:0;transition:opacity 1s ease .3s;text-align:center}
-#intro-text.show + #intro-sub{opacity:1}
-#usage-bar{position:fixed;top:0;left:0;right:0;height:4px;background:transparent;z-index:80;pointer-events:none}
-#usage-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--b));transition:width .5s}
-#plus-modal,#blocked-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px}
-#plus-modal.open,#blocked-modal.open{display:flex}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
-<body data-theme="space">
+  <body data-theme="space">
+
 <div id="usage-bar"><div id="usage-fill"></div></div>
 
 <div id="intro"><div style="text-align:center"><div id="intro-text">Lumera Studio</div><div id="intro-sub">L U M E R A &nbsp; S T U D I O</div></div></div>
@@ -136,7 +99,7 @@ body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-
   </div>
 </div>
 
-<div id="plus-modal">
+<div id="plus-modal" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px">
   <div class="glass w-full max-w-md p-6" style="max-height:90vh;overflow-y:auto">
     <div class="text-center mb-4">
       <div class="text-4xl mb-2">⚡</div>
@@ -161,7 +124,7 @@ body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-
   </div>
 </div>
 
-<div id="blocked-modal">
+<div id="blocked-modal" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px">
   <div class="glass w-full max-w-sm p-6 text-center">
     <div class="text-5xl mb-3">⏳</div>
     <h2 class="font-bold text-xl mb-2">محدودیت موقت</h2>
@@ -174,7 +137,7 @@ body::after{ content:''; position:fixed; inset:0; z-index:-1; background:radial-
 
 <script>
 const SUPABASE_URL = 'https://xtyxorzyrzvzpwrtqnys.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_DALm5PHLFNf8pf7q7Pl3Mg_KZPnwKAJ';
+const SUPABASE_ANON = 'sb_publishable_DALm5phLFNf8pf7q7Pl3Mg_KZPnwKAJ';
 const OWNER_EMAIL = 'amiralihesamfar@gmail.com';
 const SYSTEM = 'You are Lumera AI. Year is 2026. Reply in Persian. Be natural and concise.';
 const FREE_LIMIT = 1000;
@@ -191,7 +154,6 @@ let voiceRec = null;
 let blockedTimer = null;
 
 const FAKE_DOMAINS = ['mailinator.com','tempmail.com','10minutemail.com','guerrillamail.com','trashmail.com','yopmail.com'];
-const KNOWN_OK = ['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','live.com'];
 
 function $(id){ return document.getElementById(id); }
 function normEmail(e){ return String(e||'').trim().toLowerCase(); }
@@ -240,16 +202,16 @@ function setTheme(name){ document.body.setAttribute('data-theme', name); localSt
 (function(){ const t=localStorage.getItem('lumera_ai_theme'); if(t) setTheme(t); })();
 
 function openSettings(){
-  $('settings-modal').classList.add('open');
+  $('settings-modal').style.display = 'flex';
   $('owner-key-box').classList.toggle('hidden', !isOwner);
   $('owner-discount-box').classList.toggle('hidden', !isOwner);
   $('owner-plan-box').classList.toggle('hidden', !isOwner);
   if(isOwner){ $('openai-key').value=''; loadDiscountList(); }
 }
-function closeSettings(){ $('settings-modal').classList.remove('open'); }
-function openPlusModal(){ $('plus-modal').classList.add('open'); }
-function closePlusModal(){ $('plus-modal').classList.remove('open'); }
-function closeBlockedModal(){ $('blocked-modal').classList.remove('open'); }
+function closeSettings(){ $('settings-modal').style.display = 'none'; }
+function openPlusModal(){ $('plus-modal').style.display = 'flex'; }
+function closePlusModal(){ $('plus-modal').style.display = 'none'; }
+function closeBlockedModal(){ $('blocked-modal').style.display = 'none'; }
 
 function updateUsageUI(){
   const fill = $('usage-fill');
@@ -327,16 +289,14 @@ function startBlockedTimer(){
   blockedTimer = setInterval(tick, 1000);
 }
 
-function showBlocked(){ $('blocked-modal').classList.add('open'); startBlockedTimer(); }
+function showBlocked(){ $('blocked-modal').style.display = 'flex'; startBlockedTimer(); }
 
 async function initPlan(email){
   isOwner = isOwnerEmail(email);
   planData = await loadPlan(email);
-  if(isOwner){
-    isPremium = true;
-  } else if(planData.plan === 'plus' || planData.plan === 'plus_year'){
-    isPremium = true;
-  } else {
+  if(isOwner){ isPremium = true; }
+  else if(planData.plan === 'plus' || planData.plan === 'plus_year'){ isPremium = true; }
+  else {
     planData = await resetIfNeeded(email, planData);
     isPremium = false;
     if(planData.blocked_until && new Date(planData.blocked_until) > new Date()) showBlocked();
@@ -591,23 +551,4 @@ function toggleVoice(){
   addMsg('ai','گوش می‌دهم...');
 }
 
-document.addEventListener('DOMContentLoaded', function(){
-  const p = $('prompt');
-  if(p) p.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
-});
-
-(function boot(){
-  try{
-    const saved = localStorage.getItem('lumera_ai_user');
-    if(saved){
-      sessionUser = JSON.parse(saved);
-      if(!sessionUser.displayName) sessionUser.displayName = nameFromEmail(sessionUser.email);
-      isOwner = isOwnerEmail(sessionUser.email);
-      sessionUser.owner = isOwner;
-      enterApp();
-    }
-  }catch(e){}
-})();
-</script>
-</body>
-</html>
+document
