@@ -345,4 +345,208 @@ async function requestPlus(){
   try{
     if(code){const {data}=await sb.from('lumera_discounts').select('*').eq('code',code).maybeSingle();if(data&&data.used_count<data.max_uses){final=Math.round(PLUS_PRICE*(100-data.percent)/100);await sb.from('lumera_discounts').update({used_count:(data.used_count||0)+1}).eq('code',code);}}
     await sb.from('lumera_plus_requests').insert({email:sessionUser.email,discount_code:code||null,original_price:PLUS_PRICE,final_price:final,status:'pending'});
-    alert('ثبت شد
+    alert('ثبت شد! قیمت: '+final.toLocaleString('fa-IR')+' تومان');closePlusModal();
+  }catch(e){alert('خطا: '+e.message);}
+}
+function playIntro(){
+  return new Promise(resolve=>{
+    const intro=$('intro'),txt=$('intro-text');
+    intro.classList.add('show');txt.classList.remove('show');
+    setTimeout(()=>txt.classList.add('show'),100);
+    setTimeout(()=>intro.classList.add('hide'),2200);
+    setTimeout(()=>{intro.classList.remove('show','hide');txt.classList.remove('show');resolve();},3200);
+  });
+}
+async function startAuth(){
+  const r=emailBotCheck($('email').value);
+  liveValidateEmail();
+  if(!r.ok)return;
+  const email=r.email,displayName=nameFromEmail(email);
+  sessionUser={email,displayName,owner:isOwnerEmail(email)};
+  isOwner=sessionUser.owner;
+  localStorage.setItem('lumera_ai_user',JSON.stringify(sessionUser));
+  try{await sb.from('lumera_users').upsert({email,display_name:displayName,is_owner:isOwner,last_seen:new Date().toISOString()},{onConflict:'email'});}catch(e){}
+  await playIntro();
+  await enterApp();
+}
+async function enterApp(){
+  $('auth').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  isOwner=isOwnerEmail(sessionUser.email);
+  sessionUser.owner=isOwner;
+  localStorage.setItem('lumera_ai_user',JSON.stringify(sessionUser));
+  $('who').textContent=sessionUser.email;
+  $('display-name').textContent=sessionUser.displayName;
+  $('role').textContent=isOwner?'مالک':'کاربر';
+  $('role').className='badge'+(isOwner?' owner':'');
+  await loadOpenAIKey();
+  await initPlan(sessionUser.email);
+  if(!$('chat').dataset.ready){$('chat').dataset.ready='1';addMsg('ai','سلام '+sessionUser.displayName+'! من Lumera AI هستم.');}
+}
+function logout(){localStorage.removeItem('lumera_ai_user');location.reload();}
+function addMsg(role,text,extraHtml){
+  const div=document.createElement('div');
+  div.className='flex '+(role==='user'?'justify-start':'justify-end');
+  const b=document.createElement('div');
+  b.className='max-w-[90%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap '+(role==='user'?'msg-user':'msg-ai');
+  b.innerHTML=escapeHtml(text)+(extraHtml||'');
+  div.appendChild(b);
+  $('chat').appendChild(div);
+  $('chat').scrollTop=$('chat').scrollHeight;
+  return div;
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function callChat(text){
+  if(!cachedOpenAIKey)await loadOpenAIKey();
+  const name=sessionUser.displayName||'کاربر';
+  const messages=[{role:'system',content:SYSTEM+' User: '+name},{role:'user',content:text}];
+  try{
+    const {data,error}=await sb.functions.invoke('chat',{body:{message:text,userName:name,isOwner,messages}});
+    if(!error&&data){if(data.reply)return data.reply;if(data.choices&&data.choices[0]&&data.choices[0].message)return data.choices[0].message.content;}
+  }catch(e){}
+  if(cachedOpenAIKey){
+    try{const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cachedOpenAIKey},body:JSON.stringify({model:'gpt-4o-mini',messages})});const data=await res.json();if(res.ok&&data.choices&&data.choices[0])return data.choices[0].message.content;}catch(e){}
+  }
+  try{const pr=await fetch('https://text.pollinations.ai/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,model:'openai'})});if(pr.ok){const t=await pr.text();if(t&&t.trim())return t.trim();}}catch(e){}
+  return 'الان وصل نشدم.';
+}
+async function callImage(prompt){
+  if(!cachedOpenAIKey)await loadOpenAIKey();
+  try{const {data,error}=await sb.functions.invoke('chat',{body:{type:'image',prompt}});if(!error&&data&&data.data&&data.data[0]&&data.data[0].url)return data.data[0].url;}catch(e){}
+  if(cachedOpenAIKey){
+    try{const res=await fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cachedOpenAIKey},body:JSON.stringify({model:'dall-e-3',prompt,size:'1024x1024',n:1})});const data=await res.json();if(res.ok&&data.data&&data.data[0])return data.data[0].url;}catch(e){}
+  }
+  return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(prompt)+'?width=768&height=768&nologo=true&seed='+Date.now();
+}
+async function sendText(){
+  const t=$('prompt').value.trim();
+  if(!t)return;
+  if(!isPremium&&planData){
+    if(planData.blocked_until&&new Date(planData.blocked_until)>new Date()){showBlocked();return;}
+    const w=countWords(t);
+    if((planData.words_used||0)+w>FREE_LIMIT){showBlocked();return;}
+  }
+  $('prompt').value='';
+  addMsg('user',t);
+  addMsg('ai','...');
+  try{
+    const ans=await callChat(t);
+    const nodes=$('chat').querySelectorAll('.msg-ai');
+    if(nodes.length)nodes[nodes.length-1].parentElement.remove();
+    addMsg('ai',ans);
+    if(!isPremium&&sessionUser)await addWords(sessionUser.email,countWords(t));
+  }catch(e){
+    const nodes=$('chat').querySelectorAll('.msg-ai');
+    if(nodes.length)nodes[nodes.length-1].parentElement.remove();
+    addMsg('ai','خطا: '+(e.message||e));
+  }
+}
+async function sendImage(){
+  if(!isPremium&&planData&&planData.blocked_until&&new Date(planData.blocked_until)>new Date()){showBlocked();return;}
+  const t=$('prompt').value.trim()||'cinematic space art';
+  addMsg('user','[تصویر] '+t);
+  addMsg('ai','ساخت تصویر...');
+  try{
+    const url=await callImage(t);
+    const nodes=$('chat').querySelectorAll('.msg-ai');
+    if(nodes.length)nodes[nodes.length-1].parentElement.remove();
+    addMsg('ai','تصویر:','<div class="mt-2"><img src="'+url+'" style="border-radius:14px;max-width:100%;max-height:360px;object-fit:cover"/></div>');
+    $('prompt').value='';
+    if(!isPremium&&sessionUser)await addWords(sessionUser.email,50);
+  }catch(e){
+    const nodes=$('chat').querySelectorAll('.msg-ai');
+    if(nodes.length)nodes[nodes.length-1].parentElement.remove();
+    addMsg('ai','خطا: '+(e.message||e));
+  }
+}
+function clearChat(){$('chat').innerHTML='';$('chat').dataset.ready='';enterApp();}
+function toggleVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){addMsg('ai','ویس پشتیبانی نمی‌شود');return;}
+  if(voiceRec){try{voiceRec.stop()}catch(e){}voiceRec=null;return;}
+  voiceRec=new SR();voiceRec.lang='fa-IR';
+  voiceRec.onresult=(ev)=>{$('prompt').value=ev.results[0][0].transcript;sendText();voiceRec=null;};
+  voiceRec.onerror=()=>{voiceRec=null;};
+  voiceRec.onend=()=>{voiceRec=null;};
+  voiceRec.start();
+  addMsg('ai','گوش می‌دهم...');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const p=$('prompt');
+  if(p)p.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendText();}});
+});
+(function boot(){
+  try{
+    const saved=localStorage.getItem('lumera_ai_user');
+    if(saved){sessionUser=JSON.parse(saved);if(!sessionUser.displayName)sessionUser.displayName=nameFromEmail(sessionUser.email);isOwner=isOwnerEmail(sessionUser.email);sessionUser.owner=isOwner;enterApp();}
+  }catch(e){}
+})();
+
+/* ============ Effects ============ */
+(function(){
+  function initParticles(){
+    const canvas=document.createElement('canvas');canvas.id='particles-canvas';document.body.appendChild(canvas);
+    const ctx=canvas.getContext('2d');let particles=[];const count=window.innerWidth<640?40:80;
+    function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+    resize();window.addEventListener('resize',resize);
+    for(let i=0;i<count;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.5,alpha:Math.random()*.5+.2,color:Math.random()>.5?'34,211,238':'167,139,250'});}
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>canvas.width)p.vx*=-1;if(p.y<0||p.y>canvas.height)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba('+p.color+','+p.alpha+')';ctx.shadowBlur=15;ctx.shadowColor='rgba('+p.color+',.8)';ctx.fill();});
+      for(let i=0;i<particles.length;i++){for(let j=i+1;j<particles.length;j++){const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle='rgba(139,92,246,'+(.15*(1-dist/120))+')';ctx.lineWidth=.5;ctx.stroke();}}}
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+  function initCursorGlow(){
+    if(window.innerWidth<768)return;
+    const glow=document.createElement('div');glow.id='cursor-glow';document.body.appendChild(glow);
+    let mx=window.innerWidth/2,my=window.innerHeight/2,cx=mx,cy=my;
+    document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+    function anim(){cx+=(mx-cx)*.1;cy+=(my-cy)*.1;glow.style.left=cx+'px';glow.style.top=cy+'px';requestAnimationFrame(anim);}
+    anim();
+  }
+  function initRipple(){
+    document.addEventListener('click',e=>{
+      const btn=e.target.closest('.btn, #fab, button');if(!btn)return;
+      const rect=btn.getBoundingClientRect();const size=Math.max(rect.width,rect.height);
+      const ripple=document.createElement('span');ripple.className='ripple';
+      ripple.style.width=ripple.style.height=size+'px';
+      ripple.style.left=(e.clientX-rect.left-size/2)+'px';
+      ripple.style.top=(e.clientY-rect.top-size/2)+'px';
+      btn.style.position='relative';btn.style.overflow='hidden';
+      btn.appendChild(ripple);
+      setTimeout(()=>ripple.remove(),600);
+    });
+  }
+  function initStarfield(){
+    const style=document.createElement('style');
+    style.textContent='.lumera-star{position:fixed;width:2px;height:2px;background:white;border-radius:50%;pointer-events:none;z-index:-1;animation:twinkle 3s infinite;}@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}';
+    document.head.appendChild(style);
+    for(let i=0;i<50;i++){const star=document.createElement('div');star.className='lumera-star';star.style.left=Math.random()*100+'%';star.style.top=Math.random()*100+'%';star.style.animationDelay=Math.random()*3+'s';star.style.background=Math.random()>.5?'#22d3ee':'#a78bfa';star.style.boxShadow='0 0 6px currentColor';document.body.appendChild(star);}
+  }
+  function initMouseTrail(){
+    if(window.innerWidth<768)return;
+    let lastTime=0;
+    document.addEventListener('mousemove',e=>{
+      const now=Date.now();if(now-lastTime<50)return;lastTime=now;
+      const dot=document.createElement('div');
+      dot.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#a78bfa);pointer-events:none;z-index:9997;box-shadow:0 0 10px rgba(139,92,246,.8);transition:all .8s ease;transform:translate(-50%,-50%);';
+      document.body.appendChild(dot);
+      setTimeout(()=>{dot.style.opacity='0';dot.style.transform='translate(-50%,-50%) scale(0)';},50);
+      setTimeout(()=>dot.remove(),900);
+    });
+  }
+  function initAll(){
+    try{initParticles();}catch(e){}
+    try{initCursorGlow();}catch(e){}
+    try{initRipple();}catch(e){}
+    try{initStarfield();}catch(e){}
+    try{initMouseTrail();}catch(e){}
+    console.log('✨ Lumera Effects Loaded');
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initAll);}else{initAll();}
+})();
+</script>
+</body>
+</html>
